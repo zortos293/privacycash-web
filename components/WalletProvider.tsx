@@ -4,7 +4,7 @@ import { ReactNode } from "react";
 import { WagmiProvider, createConfig, http, fallback, createStorage, cookieStorage } from "wagmi";
 import { bsc, bscTestnet } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RainbowKitProvider, getDefaultConfig } from "@rainbow-me/rainbowkit";
+import { RainbowKitProvider, getDefaultConfig, darkTheme } from "@rainbow-me/rainbowkit";
 
 // Import RainbowKit CSS
 import "@rainbow-me/rainbowkit/styles.css";
@@ -71,6 +71,13 @@ export const WalletContextProvider = ({ children }: { children: ReactNode }) => 
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider
+          theme={darkTheme({
+            accentColor: '#F0B90B', // BNB gold
+            accentColorForeground: '#000000', // Black text on gold
+            borderRadius: 'medium',
+            fontStack: 'system',
+            overlayBlur: 'small',
+          })}
           appInfo={{
             appName: "AnonBNB",
             disclaimer: ({ Text, Link }) => (
