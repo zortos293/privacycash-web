@@ -2686,113 +2686,109 @@ export default function Home() {
 
         {/* Welcome Modal - First Time Users */}
         <Dialog open={showWelcomeModal} onOpenChange={handleCloseWelcome}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
+          <DialogContent className="max-w-3xl max-h-[85vh]">
+            <DialogHeader className="pb-2">
               <DialogTitle className="text-2xl flex items-center gap-3">
                 <span className="text-3xl">👋</span>
                 Welcome to AnonBNB!
               </DialogTitle>
-              <DialogDescription className="text-base pt-2">
-                Before you start, please read this important information about keeping your funds safe.
+              <DialogDescription className="text-sm">
+                Important information about keeping your funds safe.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-3 py-2">
               {/* How It Works */}
-              <div className="p-4 bg-blue-900/20 border border-blue-600/30 rounded-lg">
-                <h3 className="font-semibold text-blue-200 mb-2 flex items-center gap-2">
-                  <Info className="w-5 h-5" />
-                  How AnonBNB Works
+              <div className="p-3 bg-[#F0B90B]/10 border border-[#F0B90B]/30 rounded-lg">
+                <h3 className="font-semibold text-[#F8D12F] mb-1.5 flex items-center gap-2 text-sm">
+                  <Info className="w-4 h-4" />
+                  How It Works
                 </h3>
-                <p className="text-sm text-blue-300/80 leading-relaxed">
-                  AnonBNB breaks the link between deposits and withdrawals using zero-knowledge cryptography.
-                  When you deposit, you receive a unique <strong>nullifier</strong> and <strong>secret</strong> that
-                  prove ownership without revealing your identity. Only you have these credentials.
+                <p className="text-xs text-[#F8D12F]/80 leading-relaxed">
+                  Breaks deposit-withdrawal links using zero-knowledge cryptography. You get a unique <strong>nullifier + secret</strong> that proves ownership without revealing identity.
                 </p>
               </div>
 
               {/* Critical: Backup Required */}
-              <div className="p-4 bg-red-900/20 border border-red-600/30 rounded-lg">
-                <h3 className="font-semibold text-red-200 mb-2 flex items-center gap-2">
-                  <Lock className="w-5 h-5" />
-                  CRITICAL: Your Credentials Are Stored Locally
+              <div className="p-3 bg-red-900/20 border border-red-600/40 rounded-lg">
+                <h3 className="font-semibold text-red-300 mb-1.5 flex items-center gap-2 text-sm">
+                  <Lock className="w-4 h-4" />
+                  CRITICAL: Local Storage Only
                 </h3>
-                <p className="text-sm text-red-300/80 leading-relaxed mb-3">
-                  Your deposit credentials are stored ONLY in your browser's localStorage. They are:
-                </p>
-                <ul className="text-sm text-red-300/80 space-y-1 list-disc list-inside ml-2">
-                  <li><strong>NOT stored on the blockchain</strong> (this preserves your privacy)</li>
-                  <li><strong>NOT sent to any server</strong> (fully client-side)</li>
-                  <li><strong>LOST if you clear browser data</strong> or switch devices</li>
+                <ul className="text-xs text-red-300/90 space-y-0.5 list-disc list-inside">
+                  <li><strong>NOT on blockchain</strong> (preserves privacy)</li>
+                  <li><strong>NOT sent to servers</strong> (client-side only)</li>
+                  <li><strong>LOST if you clear browser data</strong></li>
                 </ul>
               </div>
 
               {/* Action Required */}
-              <div className="p-4 bg-yellow-900/20 border border-yellow-600/30 rounded-lg">
-                <h3 className="font-semibold text-yellow-200 mb-2 flex items-center gap-2">
-                  <Download className="w-5 h-5" />
-                  Required: Export Backup After Each Deposit
+              <div className="p-3 bg-[#F0B90B]/10 border border-[#F0B90B]/30 rounded-lg">
+                <h3 className="font-semibold text-[#F8D12F] mb-1.5 flex items-center gap-2 text-sm">
+                  <Download className="w-4 h-4" />
+                  Required: Export Backup
                 </h3>
-                <p className="text-sm text-yellow-300/80 leading-relaxed mb-3">
-                  To prevent losing access to your funds, you MUST:
-                </p>
-                <ol className="text-sm text-yellow-300/80 space-y-2 list-decimal list-inside ml-2">
-                  <li className="pl-2">
-                    <strong>Make a deposit</strong>
-                  </li>
-                  <li className="pl-2">
-                    <strong>IMMEDIATELY click the "Backup" tab</strong>
-                  </li>
-                  <li className="pl-2">
-                    <strong>Export backup file and store it securely</strong> (encrypted USB, password manager, etc.)
-                  </li>
-                  <li className="pl-2">
-                    <strong>Repeat after each new deposit</strong>
-                  </li>
+                <ol className="text-xs text-[#F8D12F]/80 space-y-1 list-decimal list-inside">
+                  <li><strong>Make deposit</strong></li>
+                  <li><strong>Click "Backup" tab immediately</strong></li>
+                  <li><strong>Export & store securely</strong></li>
+                  <li><strong>Repeat after each deposit</strong></li>
                 </ol>
               </div>
 
               {/* Security Tips */}
-              <div className="p-4 bg-green-900/20 border border-green-600/30 rounded-lg">
-                <h3 className="font-semibold text-green-200 mb-2 flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5" />
-                  Security Best Practices
+              <div className="p-3 bg-green-900/20 border border-green-600/40 rounded-lg">
+                <h3 className="font-semibold text-green-300 mb-1.5 flex items-center gap-2 text-sm">
+                  <CheckCircle className="w-4 h-4" />
+                  Security Tips
                 </h3>
-                <ul className="text-sm text-green-300/80 space-y-1 list-disc list-inside ml-2">
-                  <li>Store backup files in multiple secure locations</li>
-                  <li>Never share your backup file with anyone</li>
-                  <li>Anyone with your backup can withdraw your funds</li>
-                  <li>Test restore on a small deposit first</li>
+                <ul className="text-xs text-green-300/90 space-y-0.5 list-disc list-inside">
+                  <li>Store backups in multiple secure locations</li>
+                  <li>Never share backup files</li>
+                  <li>Anyone with backup can withdraw</li>
+                  <li>Test restore with small deposit first</li>
                 </ul>
-              </div>
-
-              {/* Quick Start */}
-              <div className="p-4 bg-gray-800/50 border border-gray-700 rounded-lg">
-                <h3 className="font-semibold text-white mb-2">✨ Quick Start Guide</h3>
-                <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside ml-2">
-                  <li className="pl-2">Go to "Deposit" tab → Deposit BNB</li>
-                  <li className="pl-2">Go to "Backup" tab → Export backup file</li>
-                  <li className="pl-2">Store backup securely (very important!)</li>
-                  <li className="pl-2">Go to "Send" tab → Withdraw to any address privately</li>
-                </ol>
               </div>
             </div>
 
-            <div className="flex gap-3">
+            {/* Quick Start - Full Width */}
+            <div className="p-3 bg-[#423C45] border border-[#554D58] rounded-lg">
+              <h3 className="font-semibold text-[#F8D12F] mb-2 text-sm">✨ Quick Start Guide</h3>
+              <div className="grid grid-cols-4 gap-2 text-xs">
+                <div className="text-center p-2 bg-[#342E37] rounded border border-[#554D58]">
+                  <div className="text-[#F0B90B] font-bold mb-1">1. Deposit</div>
+                  <div className="text-gray-400">Deposit BNB</div>
+                </div>
+                <div className="text-center p-2 bg-[#342E37] rounded border border-[#554D58]">
+                  <div className="text-[#F0B90B] font-bold mb-1">2. Backup</div>
+                  <div className="text-gray-400">Export backup file</div>
+                </div>
+                <div className="text-center p-2 bg-[#342E37] rounded border border-[#554D58]">
+                  <div className="text-[#F0B90B] font-bold mb-1">3. Secure</div>
+                  <div className="text-gray-400">Store safely</div>
+                </div>
+                <div className="text-center p-2 bg-[#342E37] rounded border border-[#554D58]">
+                  <div className="text-[#F0B90B] font-bold mb-1">4. Send</div>
+                  <div className="text-gray-400">Withdraw privately</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
               <Button
                 onClick={() => {
                   handleCloseWelcome();
                   setActiveTab("backup");
                 }}
                 variant="outline"
-                className="flex-1"
+                className="flex-1 border-[#F0B90B]/40 text-[#F0B90B] hover:bg-[#F0B90B]/10"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Go to Backup Tab
               </Button>
               <Button
                 onClick={handleCloseWelcome}
-                className="flex-1"
+                className="flex-1 bg-gradient-to-r from-[#F0B90B] to-[#F8D12F] hover:from-[#F8D12F] hover:to-[#F0B90B] text-black font-semibold"
               >
                 Got It - Start Using AnonBNB
               </Button>
