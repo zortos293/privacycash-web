@@ -1,10 +1,14 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ClientProviders } from "@/components/ClientProviders";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "Privacy Cash - Private Solana Transfers",
-  description: "Transfer SOL privately using zero-knowledge proofs on Solana",
+  title: "AnonBNB - Private BNB Transfers",
+  description: "Transfer BNB privately using zero-knowledge proofs on BNB Chain",
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
@@ -16,6 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <ClientProviders>{children}</ClientProviders>
+        <Toaster />
       </body>
     </html>
   );

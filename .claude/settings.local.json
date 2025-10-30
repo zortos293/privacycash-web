@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun add:*)",
+      "Bash(bunx shadcn@latest add:*)",
+      "Bash(bun pm:*)",
+      "Bash(npx hardhat:*)",
+      "Bash(node:*)",
+      "Bash(bun run build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nTransform from Solana to BNB Chain privacy mixer\n\nMajor rewrite converting Privacy Cash from Solana to BNB Smart Chain with smart contract integration:\n\n- Replace Solana wallet adapters with wagmi/RainbowKit for BNB Chain\n- Add Solidity smart contracts (PrivacyPool.sol, MerkleTreeWithHistory.sol)\n- Implement Hardhat development environment with deployment scripts\n- Add automated relayer service for withdrawal processing\n- Implement Merkle tree-based commitment tracking\n- Add shadcn/ui component library for enhanced UI\n- Create cryptographic utilities for deposit/withdrawal notes\n- Add comprehensive transaction history with export functionality\n- Switch from npm to bun package manager\n- Add ZK-SNARK circuit preparation (circuits/)\n- Update documentation with new architecture (CLAUDE.md)\n\nCore features:\n- Fixed 0.01 BNB denomination deposits\n- Commitment-based privacy (keccak256 nullifier + secret)\n- Configurable time-delayed withdrawals (5 min - 24 hours)\n- Multi-deposit support (2-10 deposits per transaction)\n- Automated background relayer processing\n- Local note management with backup/restore\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(rm:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
