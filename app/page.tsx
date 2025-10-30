@@ -10,6 +10,8 @@ import { parseEther, formatEther, type Hex } from "viem";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Clock, Info, History, ExternalLink, RefreshCw, Download, CheckCircle, XCircle, Loader2, ArrowUpCircle, Lock, BookOpen, GitlabIcon, Send } from "lucide-react";
 import HowItWorks from "@/components/HowItWorks";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { PRIVACY_POOL_ABI } from "@/lib/contractABI";
 import { createDepositNote, createChangeNote, updateDepositNoteStatus, getRetryableNotes, getAllDepositNotes, storeDepositNote, getDepositNote, storeWithdrawalTransaction, getCombinedTransactionHistory, cleanupDuplicateWithdrawals, getAllWithdrawalTransactions, updateWithdrawalStatus, getDepositNotesForWallet, getWithdrawalsForWallet, type DepositNote, type WithdrawalTransaction, type CombinedTransaction } from "@/lib/privacyPool";
 import { MerkleTree, loadMerkleTreeState, saveMerkleTreeState, saveDepositIndex, getDepositIndex } from "@/lib/merkleTree";
@@ -48,6 +50,7 @@ export default function Home() {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false); // First-time user welcome
   const ITEMS_PER_PAGE = 10;
 
+  const { t } = useLanguage();
   const { address, isConnected } = useAccount();
   const publicClient = usePublicClient();
   const { data: currentBlockNumber } = useBlockNumber({ watch: true });
@@ -1866,10 +1869,15 @@ export default function Home() {
               className="animate-scale-in"
             />
             <h1 className="text-5xl font-bold bg-gradient-to-r from-[#fbb305] via-[#ffd700] to-[#fbb305] bg-clip-text text-transparent">
-              AnonBNB
+              {t.appName}
             </h1>
           </div>
-          <p className="text-gray-400 text-base mb-6">Send BNB Privately - Fully Untraceable</p>
+          <p className="text-gray-400 text-base mb-6">{t.tagline}</p>
+
+          {/* Language Switcher */}
+          <div className="flex justify-center mb-6">
+            <LanguageSwitcher />
+          </div>
 
           {/* Private Balance Display */}
           {isConnected && parseFloat(privateBalance) > 0 && (
@@ -1887,7 +1895,7 @@ export default function Home() {
           <div className="flex items-center justify-center gap-3 animate-slide-down">
             <Button variant="outline" onClick={() => setShowHowItWorks(true)} className="animate-scale-in">
               <Info className="w-4 h-4" />
-              How It Works
+              {t.howItWorks}
             </Button>
             <Button
               variant="outline"
@@ -1900,7 +1908,7 @@ export default function Home() {
               style={{ animationDelay: '0.1s' }}
             >
               <History className="w-4 h-4" />
-              History
+              {t.viewHistory}
               {retryableNotes.length > 0 && (
                 <Badge variant="default" className="ml-1">
                   {retryableNotes.length}
@@ -1940,21 +1948,21 @@ export default function Home() {
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "deposit" | "send" | "backup")} className="w-full">
             {/* Tab Switcher */}
             <TabsList className="grid w-full grid-cols-3 mb-6 bg-zinc-900">
-              <TabsTrigger value="deposit">Deposit</TabsTrigger>
-              <TabsTrigger value="send">Send</TabsTrigger>
-              <TabsTrigger value="backup">Backup</TabsTrigger>
+              <TabsTrigger value="deposit">{t.deposit}</TabsTrigger>
+              <TabsTrigger value="send">{t.send}</TabsTrigger>
+              <TabsTrigger value="backup">{t.backup}</TabsTrigger>
             </TabsList>
 
             <CardHeader className="p-0 mb-6">
               <CardTitle>
-                {activeTab === "deposit" ? "Deposit to Pool" : activeTab === "send" ? "Send Privately" : "Backup & Restore"}
+                {activeTab === "deposit" ? t.depositToPool : activeTab === "send" ? t.sendPrivately : t.backupTitle}
               </CardTitle>
               <CardDescription>
                 {activeTab === "deposit"
-                  ? "Add BNB to your private balance"
+                  ? t.depositDescription
                   : activeTab === "send"
-                  ? "Send from your private balance to any address"
-                  : "Export or import your deposit credentials"}
+                  ? t.sendDescription
+                  : t.backupDescription}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
@@ -1963,7 +1971,7 @@ export default function Home() {
           {activeTab === "deposit" && (
             <>
               <div className="mb-6">
-                <label className="block text-sm text-gray-400 mb-2 font-medium">Amount (BNB)</label>
+                <label className="block text-sm text-gray-400 mb-2 font-medium">{t.amount} (BNB)</label>
                 <Input
                   type="number"
                   value={amount}
@@ -1973,7 +1981,7 @@ export default function Home() {
                   placeholder="0.01"
                   className="text-lg h-12"
                 />
-                <p className="text-xs text-gray-600 mt-2">Minimum: 0.01 BNB</p>
+                <p className="text-xs text-gray-600 mt-2">{t.fixedAmount}</p>
               </div>
             </>
           )}
@@ -1983,7 +1991,7 @@ export default function Home() {
             <>
               {/* Amount Input */}
               <div className="mb-6">
-                <label className="block text-sm text-gray-400 mb-2 font-medium">Amount (BNB)</label>
+                <label className="block text-sm text-gray-400 mb-2 font-medium">{t.amount} (BNB)</label>
                 <Input
                   type="number"
                   value={amount}
@@ -2021,7 +2029,7 @@ export default function Home() {
               {/* Recipient Address */}
               <div className="mb-6">
                 <label className="block text-sm text-gray-400 mb-2 font-medium">
-                  Recipient Address
+                  {t.recipientAddress}
                 </label>
                 <Input
                   type="text"
@@ -2035,7 +2043,7 @@ export default function Home() {
               {/* Delay Input */}
               <div className="mb-6">
                 <label className="block text-sm text-gray-400 mb-2 font-medium">
-                  Time Delay (Minutes)
+                  {t.delayTime} ({t.minutes})
                 </label>
                 <Input
                   type="number"
@@ -2132,11 +2140,9 @@ export default function Home() {
                   <div className="flex items-start gap-3">
                     <Info className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
                     <div className="text-sm text-yellow-200">
-                      <p className="font-semibold mb-1">Important Security Information</p>
+                      <p className="font-semibold mb-1">{t.backupSecurityWarningTitle}</p>
                       <p className="text-yellow-300/80">
-                        Your deposit credentials (nullifier & secret) are stored ONLY in your browser's localStorage.
-                        They are NEVER sent to any server or stored on the blockchain. If you clear your browser data
-                        or use a different device, you'll need this backup to access your deposits.
+                        {t.backupSecurityWarningText}
                       </p>
                     </div>
                   </div>
@@ -2144,9 +2150,9 @@ export default function Home() {
 
                 {/* Export Section */}
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-3">Export Backup</h3>
+                  <h3 className="text-lg font-semibold text-white mb-3">{t.exportBackupTitle}</h3>
                   <p className="text-sm text-gray-400 mb-4">
-                    Download a JSON file containing all your deposit credentials. Store it securely - anyone with this file can withdraw your deposits!
+                    {t.exportBackupDescription}
                   </p>
                   <Button
                     onClick={handleExportBackup}
@@ -2155,7 +2161,7 @@ export default function Home() {
                     disabled={!isConnected}
                   >
                     <Download className="w-5 h-5 mr-2" />
-                    Export Backup File
+                    {t.exportBackupButton}
                   </Button>
                 </div>
 
@@ -2163,9 +2169,9 @@ export default function Home() {
 
                 {/* Import Section */}
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-3">Import Backup</h3>
+                  <h3 className="text-lg font-semibold text-white mb-3">{t.importBackupTitle}</h3>
                   <p className="text-sm text-gray-400 mb-4">
-                    Restore your deposit credentials from a previously exported backup file.
+                    {t.importBackupDescription}
                   </p>
                   <div className="relative">
                     <input
@@ -2184,7 +2190,7 @@ export default function Home() {
                         disabled={!isConnected}
                       >
                         <ArrowUpCircle className="w-5 h-5 mr-2" />
-                        Import Backup File
+                        {t.importBackupButton}
                       </Button>
                     </label>
                   </div>
@@ -2192,12 +2198,12 @@ export default function Home() {
 
                 {/* Tips */}
                 <div className="p-4 bg-blue-900/20 border border-blue-600/30 rounded-lg">
-                  <p className="text-sm font-semibold text-blue-200 mb-2">💡 Best Practices</p>
+                  <p className="text-sm font-semibold text-blue-200 mb-2">{t.bestPracticesTitle}</p>
                   <ul className="text-sm text-blue-300/80 space-y-1 list-disc list-inside">
-                    <li>Export backup immediately after making deposits</li>
-                    <li>Store backup file in a secure location (encrypted USB, password manager, etc.)</li>
-                    <li>Never share your backup file with anyone</li>
-                    <li>Create new backups after each deposit session</li>
+                    <li>{t.bestPractice1}</li>
+                    <li>{t.bestPractice2}</li>
+                    <li>{t.bestPractice3}</li>
+                    <li>{t.bestPractice4}</li>
                   </ul>
                 </div>
               </div>
@@ -2227,17 +2233,17 @@ export default function Home() {
               {isWritePending ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Awaiting Wallet Approval...
+                  {t.waitingForConfirmation}
                 </>
               ) : isLoading || isConfirming ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  {stage === "deposit" ? "Processing..." : "Queueing..."}
+                  {stage === "deposit" ? t.depositing : t.processing}
                 </>
               ) : (
                 <>
                   <Lock className="w-5 h-5" />
-                  {activeTab === "deposit" ? "Deposit to Pool" : "Send Privately"}
+                  {activeTab === "deposit" ? t.confirmDeposit : t.confirmSend}
                 </>
               )}
               </Button>

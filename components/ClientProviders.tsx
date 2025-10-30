@@ -2,6 +2,7 @@
 
 import { FC, ReactNode } from "react";
 import dynamic from "next/dynamic";
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 
 const WalletContextProvider = dynamic(
   () => import("./WalletProvider").then(mod => ({ default: mod.WalletContextProvider })),
@@ -9,5 +10,9 @@ const WalletContextProvider = dynamic(
 );
 
 export const ClientProviders: FC<{ children: ReactNode }> = ({ children }) => {
-  return <WalletContextProvider>{children}</WalletContextProvider>;
+  return (
+    <LanguageProvider>
+      <WalletContextProvider>{children}</WalletContextProvider>
+    </LanguageProvider>
+  );
 };

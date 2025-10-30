@@ -16,7 +16,8 @@
       "Bash(npx next lint)",
       "Read(//c/**)",
       "Bash(bun run deploy:mainnet:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nRename contract to AnonBNB and deploy to mainnet\n\n- Rename PrivacyPoolZK.sol to AnonBNB.sol\n- Update deployment script to reference AnonBNB\n- Successfully deployed to BSC mainnet: 0xB07a9Fa3Bec534ff8d6728D0e51d205fB2Be0b08\n- Clean artifacts and cache before deployment\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nRename contract to AnonBNB and deploy to mainnet\n\n- Rename PrivacyPoolZK.sol to AnonBNB.sol\n- Update deployment script to reference AnonBNB\n- Successfully deployed to BSC mainnet: 0xB07a9Fa3Bec534ff8d6728D0e51d205fB2Be0b08\n- Clean artifacts and cache before deployment\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

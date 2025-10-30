@@ -37,7 +37,9 @@
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "scripts",
+    "typechain-types"
   ],
   "ts-node": {
     "compilerOptions": {
