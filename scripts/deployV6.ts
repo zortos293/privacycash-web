@@ -7,12 +7,12 @@ import { ethers } from "hardhat";
  */
 
 async function main() {
-  console.log("🚀 Deploying PrivacyPoolZK V6 (Instant Withdrawals Enabled)...\n");
+  console.log("🚀 Deploying AnonBNB V6 (Instant Withdrawals Enabled)...\n");
 
-  const PrivacyPoolZK = await ethers.getContractFactory("PrivacyPoolZK");
+  const AnonBNB = await ethers.getContractFactory("AnonBNB");
 
   console.log("📝 Deploying contract with gas limit: 6M");
-  const privacyPool = await PrivacyPoolZK.deploy({
+  const privacyPool = await AnonBNB.deploy({
     gasLimit: 6000000, // 6M gas limit for Merkle tree
   });
 
@@ -21,7 +21,7 @@ async function main() {
 
   const address = await privacyPool.getAddress();
 
-  console.log(`\n✅ PrivacyPoolZK V6 deployed to: ${address}`);
+  console.log(`\n✅ AnonBNB V6 deployed to: ${address}`);
   console.log("\n📋 Save this address to your .env file:");
   console.log(`NEXT_PUBLIC_PRIVACY_POOL_ADDRESS=${address}`);
 

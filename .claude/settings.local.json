@@ -9,7 +9,14 @@
       "Bash(bun run build:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nTransform from Solana to BNB Chain privacy mixer\n\nMajor rewrite converting Privacy Cash from Solana to BNB Smart Chain with smart contract integration:\n\n- Replace Solana wallet adapters with wagmi/RainbowKit for BNB Chain\n- Add Solidity smart contracts (PrivacyPool.sol, MerkleTreeWithHistory.sol)\n- Implement Hardhat development environment with deployment scripts\n- Add automated relayer service for withdrawal processing\n- Implement Merkle tree-based commitment tracking\n- Add shadcn/ui component library for enhanced UI\n- Create cryptographic utilities for deposit/withdrawal notes\n- Add comprehensive transaction history with export functionality\n- Switch from npm to bun package manager\n- Add ZK-SNARK circuit preparation (circuits/)\n- Update documentation with new architecture (CLAUDE.md)\n\nCore features:\n- Fixed 0.01 BNB denomination deposits\n- Commitment-based privacy (keccak256 nullifier + secret)\n- Configurable time-delayed withdrawals (5 min - 24 hours)\n- Multi-deposit support (2-10 deposits per transaction)\n- Automated background relayer processing\n- Local note management with backup/restore\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(git push)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nUpdate welcome modal with BNB theme and no-scroll layout\n\n- Change to 2-column grid layout to fit without scrolling\n- Remove overflow-y-auto for clean display\n- Update color scheme to BNB gold theme (#F0B90B, #F8D12F)\n- Use BNB dark backgrounds (#342E37, #423C45, #554D58)\n- Add gold gradient button styling\n- Reduce text sizes and padding for compact display\n- Keep red for critical warnings, green for security tips\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(bun run lint:*)",
+      "Bash(npx next lint)",
+      "Read(//c/**)",
+      "Bash(bun run deploy:mainnet:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nRename contract to AnonBNB and deploy to mainnet\n\n- Rename PrivacyPoolZK.sol to AnonBNB.sol\n- Update deployment script to reference AnonBNB\n- Successfully deployed to BSC mainnet: 0xB07a9Fa3Bec534ff8d6728D0e51d205fB2Be0b08\n- Clean artifacts and cache before deployment\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []
