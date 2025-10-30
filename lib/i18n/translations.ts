@@ -39,7 +39,6 @@ export interface Translation {
   // Status messages
   depositing: string;
   sending: string;
-  processing: string;
   confirmingTransaction: string;
   waitingForConfirmation: string;
 
@@ -93,6 +92,25 @@ export interface Translation {
   queued: string;
   completed: string;
   failed: string;
+  processing: string;
+  transactions: string;
+  transaction: string;
+  sortedByNewest: string;
+  loadingFromBlockchain: string;
+  fetchingRealTimeStatus: string;
+  noTransactionHistory: string;
+  transactionsWillAppear: string;
+  commitment: string;
+  type: string;
+  timeRemaining: string;
+  viewDeposit: string;
+  viewQueue: string;
+  viewWithdrawal: string;
+  retryWithdrawal: string;
+  page: string;
+  of: string;
+  total: string;
+  refreshingFromBlockchain: string;
 
   // Privacy features
   privacyFeatures: string;
@@ -219,7 +237,6 @@ export const translations: Record<'en' | 'zh', Translation> = {
     // Status messages
     depositing: 'Depositing',
     sending: 'Sending',
-    processing: 'Processing',
     confirmingTransaction: 'Confirming transaction',
     waitingForConfirmation: 'Waiting for confirmation',
 
@@ -273,6 +290,25 @@ export const translations: Record<'en' | 'zh', Translation> = {
     queued: 'Queued',
     completed: 'Completed',
     failed: 'Failed',
+    processing: 'Processing',
+    transactions: 'transactions',
+    transaction: 'transaction',
+    sortedByNewest: 'Sorted by newest first',
+    loadingFromBlockchain: 'Loading from blockchain...',
+    fetchingRealTimeStatus: 'Fetching real-time transaction status',
+    noTransactionHistory: 'No transaction history',
+    transactionsWillAppear: 'Your completed and pending transactions will appear here',
+    commitment: 'Commitment',
+    type: 'Type',
+    timeRemaining: 'Time Remaining',
+    viewDeposit: 'View Deposit',
+    viewQueue: 'View Queue',
+    viewWithdrawal: 'View Withdrawal',
+    retryWithdrawal: 'Retry Withdrawal',
+    page: 'Page',
+    of: 'of',
+    total: 'total',
+    refreshingFromBlockchain: 'Refreshing from blockchain...',
 
     // Privacy features
     privacyFeatures: 'Privacy Features',
@@ -398,7 +434,6 @@ export const translations: Record<'en' | 'zh', Translation> = {
     // Status messages
     depositing: '存款中',
     sending: '发送中',
-    processing: '处理中',
     confirmingTransaction: '确认交易中',
     waitingForConfirmation: '等待确认',
 
@@ -452,6 +487,25 @@ export const translations: Record<'en' | 'zh', Translation> = {
     queued: '队列中',
     completed: '已完成',
     failed: '失败',
+    processing: '处理中',
+    transactions: '笔交易',
+    transaction: '笔交易',
+    sortedByNewest: '按最新排序',
+    loadingFromBlockchain: '从区块链加载中...',
+    fetchingRealTimeStatus: '获取实时交易状态',
+    noTransactionHistory: '无交易历史',
+    transactionsWillAppear: '您已完成和待处理的交易将显示在这里',
+    commitment: '承诺',
+    type: '类型',
+    timeRemaining: '剩余时间',
+    viewDeposit: '查看存款',
+    viewQueue: '查看队列',
+    viewWithdrawal: '查看提款',
+    retryWithdrawal: '重试提款',
+    page: '第',
+    of: '页，共',
+    total: '条',
+    refreshingFromBlockchain: '从区块链刷新中...',
 
     // Privacy features
     privacyFeatures: '隐私功能',

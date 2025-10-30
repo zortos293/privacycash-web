@@ -2410,9 +2410,9 @@ export default function Home() {
                       <History className="w-6 h-6 text-[#fbb305]" />
                     </div>
                     <div>
-                      <DialogTitle className="text-2xl mb-1">Transaction History</DialogTitle>
+                      <DialogTitle className="text-2xl mb-1">{t.transactionHistory}</DialogTitle>
                       <DialogDescription className="text-base">
-                        {sortedHistory.length} {sortedHistory.length === 1 ? 'transaction' : 'transactions'} • Sorted by newest first
+                        {sortedHistory.length} {sortedHistory.length === 1 ? t.transaction : t.transactions} • {t.sortedByNewest}
                       </DialogDescription>
                     </div>
                   </div>
@@ -2423,13 +2423,13 @@ export default function Home() {
                       onClick={() => {
                         console.log("🔄 Manual refresh triggered - fetching from blockchain");
                         fetchHistoryFromBlockchain();
-                        toast.info("Refreshing from blockchain...");
+                        toast.info(t.refreshingFromBlockchain);
                       }}
                       disabled={isLoadingHistory}
                       className="gap-2"
                     >
                       <RefreshCw className={`w-4 h-4 ${isLoadingHistory ? 'animate-spin' : ''}`} />
-                      Refresh
+                      {t.refresh}
                     </Button>
                     <Button
                       variant="ghost"
@@ -2452,16 +2452,16 @@ export default function Home() {
                 {isLoadingHistory ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
                     <Loader2 className="w-12 h-12 text-[#fbb305] animate-spin mb-4" />
-                    <h3 className="text-white text-xl font-semibold mb-2">Loading from blockchain...</h3>
-                    <p className="text-gray-500 text-sm max-w-md">Fetching real-time transaction status</p>
+                    <h3 className="text-white text-xl font-semibold mb-2">{t.loadingFromBlockchain}</h3>
+                    <p className="text-gray-500 text-sm max-w-md">{t.fetchingRealTimeStatus}</p>
                   </div>
                 ) : sortedHistory.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
                     <div className="w-24 h-24 bg-zinc-800/30 rounded-2xl flex items-center justify-center mb-6 ring-1 ring-zinc-800">
                       <History className="w-12 h-12 text-gray-600" />
                     </div>
-                    <h3 className="text-white text-xl font-semibold mb-2">No transaction history</h3>
-                    <p className="text-gray-500 text-sm max-w-md">Your completed and pending transactions will appear here</p>
+                    <h3 className="text-white text-xl font-semibold mb-2">{t.noTransactionHistory}</h3>
+                    <p className="text-gray-500 text-sm max-w-md">{t.transactionsWillAppear}</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -2471,11 +2471,11 @@ export default function Home() {
                       const isWithdrawal = tx.type === 'withdrawal';
 
                       const getStatusBadge = () => {
-                        if (tx.status === 'completed') return <Badge variant="completed" className="gap-1.5"><CheckCircle className="w-3 h-3" />Completed</Badge>;
-                        if (tx.status === 'failed') return <Badge variant="failed" className="gap-1.5"><XCircle className="w-3 h-3" />Failed</Badge>;
-                        if (tx.status === 'processing') return <Badge variant="processing" className="gap-1.5"><Loader2 className="w-3 h-3 animate-spin" />Processing</Badge>;
-                        if (tx.status === 'queued') return <Badge variant="queued" className="gap-1.5"><Clock className="w-3 h-3" />Queued</Badge>;
-                        return <Badge variant="default" className="gap-1.5"><Download className="w-3 h-3" />Deposited</Badge>;
+                        if (tx.status === 'completed') return <Badge variant="completed" className="gap-1.5"><CheckCircle className="w-3 h-3" />{t.completed}</Badge>;
+                        if (tx.status === 'failed') return <Badge variant="failed" className="gap-1.5"><XCircle className="w-3 h-3" />{t.failed}</Badge>;
+                        if (tx.status === 'processing') return <Badge variant="processing" className="gap-1.5"><Loader2 className="w-3 h-3 animate-spin" />{t.processing}</Badge>;
+                        if (tx.status === 'queued') return <Badge variant="queued" className="gap-1.5"><Clock className="w-3 h-3" />{t.queued}</Badge>;
+                        return <Badge variant="default" className="gap-1.5"><Download className="w-3 h-3" />{t.deposited}</Badge>;
                       };
 
                       const getTypeIcon = () => {
@@ -2493,13 +2493,13 @@ export default function Home() {
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-3 flex-wrap">
                                   <CardTitle className="text-lg">
-                                    {isWithdrawal ? 'Withdrawal' : 'Deposit'} #{reverseIdx}
+                                    {isWithdrawal ? t.withdrawalTransaction : t.depositTransaction} #{reverseIdx}
                                   </CardTitle>
                                   {getStatusBadge()}
                                 </div>
                                 <div className="space-y-1.5">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-gray-500 text-xs">Commitment:</span>
+                                    <span className="text-gray-500 text-xs">{t.commitment}:</span>
                                     <code className="text-gray-400 text-xs font-mono bg-zinc-800/50 px-2 py-0.5 rounded">
                                       {tx.commitment.slice(0, 10)}...{tx.commitment.slice(-8)}
                                     </code>
@@ -2523,7 +2523,7 @@ export default function Home() {
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                               {/* Amount */}
                               <div>
-                                <p className="text-gray-500 text-xs mb-1.5 font-medium">Amount</p>
+                                <p className="text-gray-500 text-xs mb-1.5 font-medium">{t.amount}</p>
                                 <p className={`text-base font-semibold ${isWithdrawal ? 'text-green-400' : 'text-[#fbb305]'}`}>
                                   {isWithdrawal ? '-' : '+'}{tx.amount} BNB
                                 </p>
@@ -2532,7 +2532,7 @@ export default function Home() {
                               {/* Recipient (for withdrawals) */}
                               {isWithdrawal && tx.recipient && (
                                 <div>
-                                  <p className="text-gray-500 text-xs mb-1.5 font-medium">Recipient</p>
+                                  <p className="text-gray-500 text-xs mb-1.5 font-medium">{t.recipient}</p>
                                   <code className="text-white text-sm font-mono">
                                     {tx.recipient.slice(0, 8)}...{tx.recipient.slice(-6)}
                                   </code>
@@ -2541,16 +2541,16 @@ export default function Home() {
 
                               {/* Type indicator */}
                               <div>
-                                <p className="text-gray-500 text-xs mb-1.5 font-medium">Type</p>
+                                <p className="text-gray-500 text-xs mb-1.5 font-medium">{t.type}</p>
                                 <p className={`text-sm font-semibold ${isWithdrawal ? 'text-green-400' : 'text-[#fbb305]'}`}>
-                                  {isWithdrawal ? 'Withdrawal' : 'Deposit'}
+                                  {isWithdrawal ? t.withdrawalTransaction : t.depositTransaction}
                                 </p>
                               </div>
 
                               {/* Queued time remaining (for queued withdrawals) */}
                               {isWithdrawal && tx.status === 'queued' && tx.withdrawalData?.executeAfter && (
                                 <div>
-                                  <p className="text-purple-400 text-xs mb-1.5 font-medium">Time Remaining</p>
+                                  <p className="text-purple-400 text-xs mb-1.5 font-medium">{t.timeRemaining}</p>
                                   <p className="text-purple-300 text-base font-semibold">
                                     {Math.max(0, Math.ceil((tx.withdrawalData.executeAfter - Date.now()) / 60000))} min
                                   </p>
@@ -2569,7 +2569,7 @@ export default function Home() {
                                   className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-semibold border border-[#fbb305]/20 bg-black/40 hover:bg-black/60 hover:border-[#fbb305]/40 text-[#fbb305] backdrop-blur-sm transition-all duration-200 ease-apple hover:scale-[1.02] active:scale-[0.97] transform-gpu"
                                 >
                                   <ArrowUpCircle className="w-3.5 h-3.5" />
-                                  View Deposit
+                                  {t.viewDeposit}
                                   <ExternalLink className="w-3 h-3" />
                                 </a>
                               )}
@@ -2583,7 +2583,7 @@ export default function Home() {
                                   className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-semibold border border-purple-500/20 bg-purple-500/5 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 transition-all duration-200 ease-apple hover:scale-[1.02] active:scale-[0.97] transform-gpu"
                                 >
                                   <Clock className="w-3.5 h-3.5" />
-                                  View Queue
+                                  {t.viewQueue}
                                   <ExternalLink className="w-3 h-3" />
                                 </a>
                               )}
@@ -2597,7 +2597,7 @@ export default function Home() {
                                   className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl text-xs font-semibold border border-green-500/20 bg-green-500/5 hover:bg-green-500/10 hover:border-green-500/40 text-green-400 transition-all duration-200 ease-apple hover:scale-[1.02] active:scale-[0.97] transform-gpu"
                                 >
                                   <CheckCircle className="w-3.5 h-3.5" />
-                                  View Withdrawal
+                                  {t.viewWithdrawal}
                                   <ExternalLink className="w-3 h-3" />
                                 </a>
                               )}
@@ -2615,7 +2615,7 @@ export default function Home() {
                                   }}
                                 >
                                   <RefreshCw className="w-3.5 h-3.5" />
-                                  Retry Withdrawal
+                                  {t.retryWithdrawal}
                                 </Button>
                               )}
                             </div>
@@ -2634,7 +2634,7 @@ export default function Home() {
                   <div className="p-6">
                     <div className="flex items-center justify-between flex-wrap gap-4">
                       <p className="text-gray-400 text-sm font-medium">
-                        Page {historyPage} of {totalPages} • {sortedHistory.length} total
+                        {t.page} {historyPage} {t.of} {totalPages} • {sortedHistory.length} {t.total}
                       </p>
                       <div className="flex items-center gap-2">
                         <Button
@@ -2644,7 +2644,7 @@ export default function Home() {
                           disabled={historyPage === 1}
                           className="gap-2"
                         >
-                          Previous
+                          {t.previous}
                         </Button>
                         <div className="hidden sm:flex items-center gap-1">
                           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -2679,7 +2679,7 @@ export default function Home() {
                           disabled={historyPage === totalPages}
                           className="gap-2"
                         >
-                          Next
+                          {t.next}
                         </Button>
                       </div>
                     </div>
