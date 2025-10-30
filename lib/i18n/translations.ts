@@ -193,6 +193,12 @@ export interface Translation {
   smartContract: string;
   recipient: string;
   status: string;
+
+  // Fee discount
+  feeDiscountEligible: string;
+  feeDiscountNotEligible: string;
+  tokenBalance: string;
+  holdingTokens: string;
 }
 
 export const translations: Record<'en' | 'zh', Translation> = {
@@ -391,6 +397,12 @@ export const translations: Record<'en' | 'zh', Translation> = {
     smartContract: 'Smart Contract',
     recipient: 'Recipient',
     status: 'Status',
+
+    // Fee discount
+    feeDiscountEligible: 'Eligible for Fee Discount',
+    feeDiscountNotEligible: 'Not Eligible for Fee Discount',
+    tokenBalance: 'Token Balance',
+    holdingTokens: 'Holding Tokens',
   },
 
   zh: {
@@ -588,5 +600,11 @@ export const translations: Record<'en' | 'zh', Translation> = {
     smartContract: '智能合约',
     recipient: '接收者',
     status: '状态',
+
+    // Fee discount
+    feeDiscountEligible: '符合费用折扣资格',
+    feeDiscountNotEligible: '不符合费用折扣资格',
+    tokenBalance: '代币余额',
+    holdingTokens: '持有代币',
   },
 };

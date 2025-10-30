@@ -58,6 +58,18 @@ export default function Home() {
     address: address,
   });
 
+  // Check token balance for fee discount (100k tokens minimum)
+  const DISCOUNT_TOKEN_ADDRESS = '0x9bd03d534a7e8bb9c820188c1d5c2c76eae14444' as const;
+  const DISCOUNT_THRESHOLD = 100000n; // 100k tokens
+
+  const { data: tokenBalance } = useBalance({
+    address: address,
+    token: DISCOUNT_TOKEN_ADDRESS,
+  });
+
+  // Check if eligible for fee discount
+  const isEligibleForDiscount = tokenBalance && tokenBalance.value >= DISCOUNT_THRESHOLD;
+
   const { writeContract, data: hash, error: writeError, isPending: isWritePending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
@@ -1925,7 +1937,7 @@ export default function Home() {
         {isConnected && address && balanceData && (
           <Card className="mb-6 animate-scale-in">
             <CardContent className="p-5">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center mb-3">
                 <div>
                   <p className="text-gray-500 text-xs mb-1.5">Your Wallet</p>
                   <p className="text-white text-sm font-mono">
@@ -1939,6 +1951,36 @@ export default function Home() {
                   </p>
                 </div>
               </div>
+
+              {/* Fee Discount Badge */}
+              {tokenBalance && (
+                <div className="pt-3 border-t border-zinc-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 text-xs">{t.tokenBalance}:</span>
+                      <span className="text-white text-xs font-semibold">
+                        {parseFloat(tokenBalance.formatted).toLocaleString()} {tokenBalance.symbol}
+                      </span>
+                    </div>
+                    <Badge
+                      variant={isEligibleForDiscount ? "completed" : "default"}
+                      className="text-xs"
+                    >
+                      {isEligibleForDiscount ? (
+                        <>
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          {t.feeDiscountEligible}
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-3 h-3 mr-1" />
+                          {t.feeDiscountNotEligible}
+                        </>
+                      )}
+                    </Badge>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
