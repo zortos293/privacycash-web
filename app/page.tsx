@@ -116,6 +116,22 @@ export default function Home() {
               >
                 Docs
               </a>
+              <a
+                href="https://x.com/mertdotcash"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-gray-700 hover:text-[#efb62f] transition-colors"
+                aria-label="Follow us on X"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+              </a>
               <WalletMultiButton className="!bg-[#efb62f] !text-black hover:!bg-[#d9a429] !rounded-lg !h-10" />
             </div>
           </div>
