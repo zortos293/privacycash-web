@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AnonBNB is an automated cryptocurrency privacy mixer built with Next.js 15, Solidity smart contracts, and Hardhat. It enables fully untraceable BNB transfers using a commitment-based privacy pool system with automated background processing via a relayer service. The system achieves privacy by breaking on-chain links between senders and recipients through pooled deposits and time-delayed withdrawals.
+This is a Solana-based cryptocurrency privacy mixer that uses ZCASH as a routing mechanism. Built with Next.js 15, Rust/Anchor smart programs, and TypeScript. It enables fully untraceable SOL transfers by routing through wrapped ZCASH pools, using commitment-based privacy with automated withdrawal processing.
+
+**Privacy Flow:** SOL → ZEC (via Jupiter) → Privacy Pool → ZEC → SOL (to recipient)
 
 ## Package Manager
 
@@ -17,24 +19,18 @@ Always use the bun package manager for everything like installing packages, runn
 bun install              # Install dependencies
 bun run dev             # Run Next.js dev server (localhost:3000) - DO NOT RUN, let user run this
 bun run build           # Build for production
-bun run start               # Start production server
+bun run start           # Start production server
 bun run lint            # Run linter
 
-# Smart Contract Deployment
-bun run deploy:testnet  # Deploy to BSC Testnet (runs scripts/deployV6.ts)
-bun run deploy:mainnet  # Deploy to BSC Mainnet (runs scripts/deployV6.ts)
+# Solana Program (Smart Contract)
+bun run anchor:build    # Build Anchor program (Rust)
+bun run anchor:test     # Run Anchor tests
+bun run deploy:devnet   # Deploy to Solana Devnet
+bun run deploy:mainnet  # Deploy to Solana Mainnet
 
 # Relayer Service (Background Processing)
-bun run relayer         # Run relayer on BSC Testnet
-bun run relayer:mainnet # Run relayer on BSC Mainnet
-
-# Utility Scripts (run with: hardhat run scripts/<script>.ts --network bscTestnet)
-# - check-balance.ts: Check relayer wallet balance
-# - checkDeposit.ts: Verify specific deposit commitment
-# - checkQueue.ts: View current withdrawal queue
-# - debugMerkle.ts: Debug Merkle tree state
-# - testMerkleTree.ts: Test Merkle tree operations
-# - verifyMerkleProof.ts: Verify Merkle proof validity
+bun run relayer         # Run relayer on Devnet
+bun run relayer:mainnet # Run relayer on Mainnet
 ```
 
 ## Architecture Overview
@@ -42,110 +38,144 @@ bun run relayer:mainnet # Run relayer on BSC Mainnet
 ### Three-Tier System Architecture
 
 1. **Frontend (Next.js)**: User interface for deposits and withdrawal queueing
-2. **Smart Contracts (Solidity)**: On-chain privacy pool logic
+2. **Solana Program (Rust/Anchor)**: On-chain privacy pool logic with Jupiter integration
 3. **Relayer Service (TypeScript)**: Automated background withdrawal processor
+
+### Privacy Mechanism: ZCASH Routing
+
+**Why ZCASH?**
+- Adds extra privacy layer beyond simple pooling
+- Breaks direct SOL → SOL transaction link
+- Leverages ZCASH's privacy-focused design
+- Makes chain analysis significantly harder
+
+**Flow:**
+```
+Deposit:  SOL → Jupiter Swap → wrapped ZEC → Privacy Pool (with commitment)
+Withdraw: Privacy Pool → Jupiter Swap → ZEC → SOL (to recipient address)
+```
+
+**Commitment Scheme:**
+- `commitment = keccak256(nullifier || secret)` - stored on-chain
+- `nullifierHash = keccak256(nullifier)` - revealed only at withdrawal
+- Proves ownership without revealing deposit identity
 
 ### Frontend Structure (Next.js 15 App Router)
 
-- **`app/page.tsx`**: Main UI with two-stage flow (deposit → queue withdrawal)
-- **`components/WalletProvider.tsx`**: Web3 provider configuration (wagmi + RainbowKit)
+- **`app/page.tsx`**: Main UI (NEEDS UPDATE - still uses wagmi/BNB)
+- **`components/WalletProvider.tsx`**: Solana wallet adapter configuration (Phantom, Solflare, etc.)
 - **`components/ClientProviders.tsx`**: SSR-compatible client wrapper
-- **`components/ui/`**: shadcn/ui component library (button, dialog, card, input, badge, alert, separator, scroll-area, sonner)
-- **`components/HowItWorks.tsx`**: Educational section explaining privacy mechanism
+- **`components/ui/`**: shadcn/ui component library
 - **`lib/privacyPool.ts`**: Cryptographic utilities (commitment generation, note management)
-- **`lib/contractABI.ts`**: Contract ABI for frontend interactions
-- **`lib/utils.ts`**: Utility functions (cn helper for Tailwind class merging)
+- **`lib/utils.ts`**: Utility functions
 
-**SSR Handling**: Uses two-layer provider pattern because Web3 wallet adapters require browser APIs:
-1. `ClientProviders` marks tree as client-only
-2. `WalletProvider` contains wagmi/RainbowKit providers
+**SSR Handling**: Uses two-layer provider pattern for browser-only Web3 wallets
 
-**UI Component System**: Uses shadcn/ui (configured in `components.json`) with "new-york" style, zinc base color, and CSS variables for theming
+### Solana Program Architecture
 
-### Smart Contract Architecture
+**Location:** `programs/privacy-pool/src/`
 
-**Primary Contract**: `contracts/PrivacyPool.sol`
-- Fixed denomination deposits (0.1 BNB)
+**Main Files:**
+- `lib.rs` - Core program logic (deposit, queue, process)
+- `jupiter.rs` - Jupiter swap integration (CPI calls)
+
+**Key Features:**
+- Fixed 0.1 SOL deposits (100,000,000 lamports)
 - Commitment-based privacy (keccak256 of nullifier + secret)
-- Withdrawal queue with configurable time delays (5 min - 24 hours)
-- Automated relayer processing system
-- Security features: ReentrancyGuard, Pausable, input validation
+- Withdrawal queue with time delays (5 min - 24 hours)
+- Automated relayer processing
+- Jupiter CPI for SOL ↔ ZEC swaps
 
-**Additional Contracts**:
-- `contracts/MerkleTreeWithHistory.sol`: Merkle tree for deposit tracking
-- `contracts/PrivacyPoolZK.sol`: Advanced ZK-SNARK version (future enhancement)
-
-**Key Contract Functions**:
-- `deposit(bytes32 commitment)`: Deposit 0.1 BNB with commitment
-- `queueWithdrawal(bytes32 nullifier, bytes32 secret, address recipient, uint256 delayMinutes)`: Queue withdrawal proving ownership
-- `processWithdrawals(uint256 batchSize)`: Relayer-only function to execute ready withdrawals
-- `getPoolStats()`: Returns [deposits, withdrawals, fees, activeDeposits, poolBalance, queueLength]
-
-### Privacy Mechanism Flow
-
+**Program Structure:**
+```rust
+pub mod privacy_pool {
+    pub fn initialize(relayer: Pubkey) -> Result<()>
+    pub fn deposit(commitment: [u8; 32]) -> Result<()>
+    pub fn queue_withdrawal(nullifier, secret, recipient, delay) -> Result<()>
+    pub fn process_withdrawals(batch_size: u8) -> Result<()>  // Relayer only
+}
 ```
-1. USER DEPOSITS:
-   - Generate random nullifier and secret (client-side)
-   - commitment = keccak256(nullifier, secret)
-   - Deposit 0.1 BNB with commitment
-   - Store note locally (localStorage)
 
-2. USER QUEUES WITHDRAWAL:
-   - Provide nullifier + secret to prove ownership
-   - Contract verifies: keccak256(nullifier, secret) == stored commitment
-   - Queue withdrawal with recipient address and delay
-   - nullifierHash stored to prevent double-spending
+**State:**
+- `PrivacyPool` account (PDA)
+  - Commitments: Vec<[u8; 32]>
+  - NullifierHashes: Vec<[u8; 32]>
+  - WithdrawalQueue: Vec<WithdrawalRequest>
+  - Stats: deposits, withdrawals, fees
 
-3. RELAYER PROCESSES (AUTOMATED):
-   - Background service checks queue every 60 seconds
-   - Process withdrawals where block.timestamp >= requestTime + delay
-   - Sends from pool to recipient (no link to depositor)
-   - Batch processing up to 10 withdrawals per transaction
-```
+**Security:**
+- Nullifier prevents double-spending
+- Time delays break temporal correlation
+- Relayer authorization check
+- Input validation on all parameters
+
+### Jupiter Integration
+
+**Purpose:** Swap SOL ↔ wrapped ZEC
+
+**Implementation:** `programs/privacy-pool/src/jupiter.rs`
+
+**Status:** ⚠️ PLACEHOLDER - Needs full implementation
+
+**Required:**
+1. Get quote from Jupiter API (off-chain)
+2. Build proper swap instruction with all accounts
+3. Execute CPI call to Jupiter program
+4. Handle slippage and partial fills
+
+**Jupiter Program ID:** `JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4`
 
 ### Relayer Service
 
-**Location**: `scripts/relayer.ts`
+**Location:** `scripts/relayer.ts`
 
-**Function**: Automated background daemon that monitors withdrawal queue and processes ready withdrawals
+**Function:** Automated background daemon that monitors withdrawal queue and processes ready withdrawals
 
-**Key Features**:
-- Runs continuously (60-second polling interval)
+**Key Features:**
+- Runs continuously (60-second polling)
 - Batch processes up to 10 withdrawals per transaction
-- Gas estimation and balance checking
-- Event logging for processed withdrawals
-- Designed for 24/7 operation on VPS with PM2
+- Uses Anchor provider and program
+- Monitors Solana program state
+- Calls `processWithdrawals` via CPI
 
-**Requirements**:
-- Must be funded with BNB for gas fees
-- Requires `RELAYER_PRIVATE_KEY` (can be same as deployer or separate wallet)
-- Must be registered as authorized relayer in contract
+**Requirements:**
+- Must be funded with SOL for transaction fees
+- Requires `RELAYER_PRIVATE_KEY` (Solana keypair, base58 encoded)
+- Must be registered as authorized relayer in program
+
+**Usage:**
+```bash
+# Devnet
+bun run relayer
+
+# Mainnet
+bun run relayer:mainnet
+```
 
 ### Cryptographic Library
 
-**Location**: `lib/privacyPool.ts`
+**Location:** `lib/privacyPool.ts`
 
-**Key Functions**:
+**Key Functions:**
 - `createDepositNote()`: Generate nullifier, secret, and commitment
-- `generateCommitment(nullifier, secret)`: keccak256(nullifier, secret)
+- `generateCommitment(nullifier, secret)`: keccak256(nullifier || secret)
 - `generateNullifierHash(nullifier)`: keccak256(nullifier)
 - `storeDepositNote()`: Save to localStorage
 - `getAllDepositNotes()`: Retrieve user's deposits
 
-**Security Model**:
+**Security Model:**
 - Nullifier + secret prove ownership without revealing identity
 - Commitment stored on-chain links to deposit
 - NullifierHash prevents double-spending (revealed only at withdrawal)
-- No direct on-chain link between deposit address and withdrawal address
+- ZCASH routing breaks on-chain transaction link
+- No direct link between deposit address and withdrawal address
 
 ### State Management
 
-Frontend uses React hooks only (no Redux/Zustand):
-- `useAccount()`: Wallet connection state
-- `useBalance()`: Wallet balance
-- `useReadContract()`: Read pool stats
-- `useWriteContract()`: Execute transactions (deposit, queueWithdrawal)
-- `useWaitForTransactionReceipt()`: Monitor transaction confirmation
+Frontend uses React hooks:
+- `useWallet()`: Solana wallet connection
+- `useConnection()`: Solana RPC connection
+- `useProgram()`: Anchor program interface (TODO)
 
 Local state in `app/page.tsx` manages:
 - Two-stage transaction flow (deposit → queue)
@@ -155,44 +185,56 @@ Local state in `app/page.tsx` manages:
 
 ## Environment Configuration
 
-**Required `.env` variables**:
+**Required `.env` variables:**
 ```bash
-# WalletConnect (get from https://cloud.walletconnect.com)
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
+# Network (devnet or mainnet)
+NEXT_PUBLIC_NETWORK=devnet
 
-# Deployer private key (for contract deployment)
-PRIVATE_KEY=your_private_key
+# Solana RPC Endpoint (optional - uses public if not set)
+NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
 
-# Relayer private key (can be same as PRIVATE_KEY or separate)
-RELAYER_PRIVATE_KEY=your_relayer_private_key
+# Program Address (set after deployment)
+NEXT_PUBLIC_PRIVACY_POOL_ADDRESS=H5YJ3bKqXJErzyNLz8M6vJ7H5W8jF9MjKYPzN8xhG7YK
 
-# Contract address (set after deployment)
-NEXT_PUBLIC_PRIVACY_POOL_ADDRESS=0x...
+# Relayer private key (Solana keypair, base58)
+# Generate with: solana-keygen new
+RELAYER_PRIVATE_KEY=your_solana_private_key_here
+
+# Wrapped ZEC mint address on Solana (via Zolana bridge)
+# Real address from Oct 16, 2025 launch
+ZEC_MINT_ADDRESS=DS3C5XPbPLPypQuYyK1F22PGyHP8wRvZwt9DaMEd4vir
+
+# Jupiter API (optional)
+JUPITER_API_URL=https://quote-api.jup.ag/v6
 ```
 
 ## Network Configuration
 
-**Current network**: BSC Testnet (Chain ID: 97)
+**Current network**: Solana Devnet
 
-Networks configured in:
-- **Frontend**: `components/WalletProvider.tsx` (wagmi chains: `[bscTestnet, bsc]`)
-- **Hardhat**: `hardhat.config.ts` (networks: `bscTestnet`, `bsc`)
+**Configured in:**
+- **Frontend**: `components/WalletProvider.tsx`
+- **Anchor**: `Anchor.toml`
 
-To switch to mainnet-only:
-```typescript
-// WalletProvider.tsx
-chains: [bsc]  // Remove bscTestnet
+**Devnet Faucet:** https://faucet.solana.com
+
+**To switch to mainnet:**
+```bash
+# .env
+NEXT_PUBLIC_NETWORK=mainnet
 ```
-
-Get testnet BNB: https://testnet.bnbchain.org/faucet-smart
 
 ## Deployment Workflow
 
-1. Set environment variables in `.env`
-2. Deploy contract: `bun run deploy:testnet` (runs `scripts/deployV6.ts`)
-3. Copy deployed address to `.env` as `NEXT_PUBLIC_PRIVACY_POOL_ADDRESS`
-4. Start relayer service: `bun run relayer` (separate terminal/VPS)
-5. Start frontend: User runs `bun run dev` (DO NOT auto-run this)
+1. Install Anchor CLI: `cargo install --git https://github.com/coral-xyz/anchor anchor-cli`
+2. Generate Solana keypair: `solana-keygen new`
+3. Fund keypair: `solana airdrop 2` (devnet) or send real SOL (mainnet)
+4. Build program: `bun run anchor:build`
+5. Deploy: `bun run deploy:devnet` or `bun run deploy:mainnet`
+6. Copy program ID to `.env` as `NEXT_PUBLIC_PRIVACY_POOL_ADDRESS`
+7. Initialize program with relayer address
+8. Start relayer: `bun run relayer` (separate terminal/VPS)
+9. User runs frontend: `bun run dev`
 
 **Production Relayer Setup** (VPS with PM2):
 ```bash
@@ -201,138 +243,156 @@ pm2 save
 pm2 startup
 ```
 
-## TypeScript Configuration
+## TypeScript/Rust Configuration
 
-- **Target**: ES2020 (for BigInt support)
-- **Module**: CommonJS (required for Hardhat scripts)
-- **Path aliases**:
-  - `@/*` maps to root directory
-  - `@/components` and `@/lib/utils` (shadcn/ui convention)
-- **Strict mode**: Enabled
-- **ts-node**: Configured for Hardhat script execution
+**TypeScript:**
+- Target: ES2020 (BigInt support)
+- Path aliases: `@/*` maps to root
+- Strict mode: Enabled
 
-## Solidity Compiler Configuration
-
-**Hardhat settings** (`hardhat.config.ts`):
-- **Version**: 0.8.20
-- **Optimizer**: Enabled with 200 runs (balances deployment cost vs. execution cost)
-- **viaIR**: Enabled (uses Yul intermediate representation for better optimization, required for complex contracts)
+**Rust (Anchor):**
+- Edition: 2021
+- Anchor version: 0.32.1
+- Dependencies: anchor-lang, anchor-spl, solana-program, spl-token
 
 ## Key Dependencies
 
-**Frontend**:
-- `wagmi@2.19`: Type-safe React hooks for Ethereum
-- `viem@2.38`: Ethereum library (parseEther, formatEther, keccak256, encodePacked)
-- `@rainbow-me/rainbowkit@2.2`: Wallet connection UI
-- `@tanstack/react-query@5.90`: Required by wagmi for caching
+**Frontend:**
+- `@solana/web3.js@1.98`: Solana JavaScript SDK
+- `@solana/wallet-adapter-*`: Wallet integration
+- `@coral-xyz/anchor@0.32`: Anchor client
+- `@jup-ag/api` + `@jup-ag/react-hook`: Jupiter integration
+- `@noble/hashes`: Cryptographic functions (keccak256)
+- `bs58`: Base58 encoding/decoding
 - `next@16` + `react@19.2`: React framework
-- `circomlibjs@0.1.7`: Cryptographic utilities (Poseidon hash for ZK circuits)
-- `shadcn/ui`: UI component system via Radix UI primitives (`@radix-ui/react-*`)
-- `lucide-react@0.548`: Icon library
-- `sonner@2.0`: Toast notifications
-- `next-themes@0.4`: Dark mode support
-- `class-variance-authority@0.7` + `clsx@2.1` + `tailwind-merge@3.3`: Component styling utilities
+- `shadcn/ui`: UI component system
 
-**Smart Contracts**:
-- `hardhat@3.0`: Ethereum development environment
-- `ethers@6.15`: Contract interaction (used in scripts only)
-- `@openzeppelin/contracts@5.4`: Security contracts (ReentrancyGuard, Ownable, Pausable)
-- `@nomicfoundation/hardhat-toolbox@6.1`: Hardhat plugin bundle
+**Backend (Rust):**
+- `anchor-lang@0.32`: Anchor framework
+- `anchor-spl@0.32`: SPL token utilities
+- `solana-program@2.1`: Solana program primitives
+- `spl-token@6.0`: Token program
 
-**Relayer**:
-- `hardhat` + `ethers`: For script execution and contract interaction
-
-**Additional Tools**:
-- `snarkjs@0.7`: ZK-SNARK proof generation and verification
-- `circom_tester@0.0.24`: Testing framework for Circom circuits
-- `tailwindcss@4.1`: Utility-first CSS framework
-- `pino-pretty@13.1`: Log formatting for development
+**Relayer:**
+- `@solana/web3.js`: Transaction sending
+- `@coral-xyz/anchor`: Program interaction
+- `bs58`: Private key decoding
 
 ## Important Files
 
-- **`app/page.tsx`**: Main UI logic (handles two-stage deposit+queue flow)
-- **`contracts/PrivacyPool.sol`**: Core privacy pool contract
+- **`programs/privacy-pool/src/lib.rs`**: Main Solana program
+- **`programs/privacy-pool/src/jupiter.rs`**: Jupiter swap integration
 - **`scripts/relayer.ts`**: Automated withdrawal processor
-- **`scripts/deployV6.ts`**: Current contract deployment script (v6 is active version)
-- **`scripts/deploy.ts`**: Legacy deployment script
-- **`lib/privacyPool.ts`**: Cryptographic utilities and note management
-- **`lib/utils.ts`**: Tailwind utility helpers
-- **`hardhat.config.ts`**: Network configuration and compiler settings
-- **`components.json`**: shadcn/ui configuration
+- **`lib/privacyPool.ts`**: Cryptographic utilities
+- **`components/WalletProvider.tsx`**: Solana wallet configuration
+- **`Anchor.toml`**: Anchor configuration
+- **`.env`**: Environment variables
 
 ## Privacy Features
 
-**Anonymity Set**: Larger pool = better privacy (more possible senders per withdrawal)
+**Anonymity Set:** Larger pool = better privacy (more possible senders per withdrawal)
 
-**Time Delays**: Configurable 5 min - 24 hours breaks temporal correlation
+**ZCASH Routing:** Extra privacy layer - all funds go through ZEC conversion
 
-**Fixed Denomination**: All deposits are 0.1 BNB (uniformity prevents amount-based tracking)
+**Time Delays:** Configurable 5 min - 24 hours breaks temporal correlation
 
-**Relayer System**: Third-party processes withdrawals, breaking direct transaction link
+**Fixed Denomination:** All deposits are 0.1 SOL (uniformity prevents amount tracking)
 
-**Commitment Scheme**: Zero-knowledge proof of ownership without revealing deposit identity
+**Relayer System:** Third-party processes withdrawals, breaking direct link
+
+**Commitment Scheme:** Zero-knowledge proof of ownership without revealing deposit identity
 
 ## Fees
 
 - **Platform fee**: 0.25% (25 basis points) on withdrawal
-- **Relayer fee**: 0.001 BNB per withdrawal (covers gas)
-- **Net received**: ~0.0996 BNB per 0.1 BNB deposit
+- **Relayer fee**: 0.001 SOL per withdrawal (covers transaction costs)
+- **Jupiter swap fees**: ~0.01-0.02% per swap (market rates)
+- **Net received**: ~0.097 SOL per 0.1 SOL deposit (after all fees)
 
 ## Security Considerations
 
-**Smart Contract**:
-- ReentrancyGuard on all state-changing functions
-- Input validation on all parameters (addresses, amounts, delays)
-- Pausable emergency stop mechanism
+**Solana Program:**
 - Nullifier hash prevents double-spending
 - Secret verification prevents unauthorized withdrawals
+- Commitment verification proves ownership
+- Time-locked withdrawals (can't rush)
+- Relayer authorization check
+- Pausable emergency mechanism
 
-**Frontend**:
+**Frontend:**
 - Deposit notes stored in localStorage (client-side only)
 - Never transmit nullifier/secret except in withdrawal transaction
 - Address validation before transactions
 
-**Relayer**:
+**Relayer:**
 - Should run on secure VPS (not local machine)
-- Private key should be separate from deployer (optional but recommended)
-- Monitor for failures and maintain sufficient gas balance
+- Private key should be separate from deployer
+- Monitor for failures and maintain sufficient SOL balance
 
-## ZK-SNARK Implementation (Circuits)
+## Testing
 
-**Current Status**: Basic commitment-based system is production-ready. Full ZK-SNARK circuits are prepared for future enhancement.
+**Devnet Testing:**
+1. Get devnet SOL from faucet
+2. Deploy program to devnet
+3. Test deposit flow
+4. Test withdrawal queue
+5. Test relayer processing
+6. Verify Jupiter swaps (if implemented)
+7. Check privacy (no on-chain link between addresses)
 
-**Circuit Location**: `circuits/withdraw.circom`
+**Integration Tests:**
+```bash
+anchor test
+```
 
-**Purpose**: Tornado Cash-style Groth16 proofs for stronger privacy (hide commitment verification on-chain)
+## Known Issues / TODO
 
-**Current System**: Uses simple nullifier+secret verification (sufficient for basic privacy)
+### Critical
+- [x] **Wrapped ZEC address found** - `DS3C5XPbPLPypQuYyK1F22PGyHP8wRvZwt9DaMEd4vir` (Oct 16, 2025 launch)
+- [ ] **Frontend `app/page.tsx`** - Skeleton created, needs full implementation with Anchor
+- [ ] **Jupiter integration is placeholder** - needs full CPI implementation for SOL ↔ ZEC swaps
 
-**Future Enhancement**: Implement full ZK-SNARK to hide which commitment is being withdrawn
+### Important
+- [ ] Generate and import proper Anchor IDL (after build)
+- [ ] Test Jupiter swaps on devnet with real ZEC token
+- [x] Verify ZEC liquidity on Jupiter - $56.6M on Raydium, available on Jupiter
+- [ ] Full E2E testing on devnet
 
-## Testing Notes
+### Nice to Have
+- [ ] UI updates for Solana explorer links
+- [ ] Better error handling for failed swaps
+- [ ] Transaction monitoring dashboard
+- [ ] Automated tests for Rust program
 
-Always test on BSC Testnet before mainnet:
-1. Get testnet BNB from faucet
-2. Deploy contract to testnet
-3. Test full flow: deposit → queue → relayer processing
-4. Verify privacy (check block explorer shows no link between addresses)
-5. Monitor relayer logs for errors
+## Resources
+
+- **Solana Docs**: https://docs.solana.com
+- **Anchor Book**: https://book.anchor-lang.com
+- **Jupiter Docs**: https://docs.jup.ag
+- **Solana Cookbook**: https://solanacookbook.com
+- **Zolana Bridge**: (Wrapped ZEC provider)
+- **Conversion Summary**: See `CONVERSION_SUMMARY.md` for detailed migration notes
 
 ## Styling
 
 - **Tailwind CSS**: All styling via utility classes
-- **Color palette**: BNB-themed dark mode
-  - Primary: `#F0B90B` (BNB gold)
-  - Secondary: `#F8D12F` (light gold)
-  - Backgrounds: `#342E37`, `#423C45`, `#2D272F`
-  - Borders: `#554D58`
-- **RainbowKit theme**: Default dark theme (can customize in `WalletProvider.tsx`)
+- **Color palette**: Solana-themed (can adjust)
+  - Primary: Purple/Blue (Solana brand colors)
+  - Consider updating from BNB gold theme
+- **Wallet adapter theme**: Default dark theme (customizable)
 
 ## Contract Address Pattern
 
-All contract interactions use:
+All program interactions use:
 ```typescript
-const PRIVACY_POOL_ADDRESS = process.env.NEXT_PUBLIC_PRIVACY_POOL_ADDRESS as `0x${string}`;
+const PROGRAM_ID = new PublicKey(process.env.NEXT_PUBLIC_PRIVACY_POOL_ADDRESS!);
 ```
 
 Must be set in `.env` after deployment for frontend to work.
+
+## Notes
+
+- This is a conversion from BNB → Solana, some files may still reference BNB
+- The commitment scheme (keccak256) is intentionally kept the same
+- Using ZCASH routing is the key differentiator from simple mixers
+- See `CONVERSION_SUMMARY.md` for complete migration details

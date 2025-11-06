@@ -1,70 +1,74 @@
-import { keccak256, toHex, fromHex, encodePacked } from "viem";
+import { keccak_256 } from "@noble/hashes/sha3.js";
+import bs58 from "bs58";
 
 /**
- * BN254 curve field size - same as in smart contract
- * This is the maximum value for elements in the field
+ * Generate a random 32-byte value as Uint8Array
  */
-const FIELD_SIZE = BigInt("21888242871839275222246405745257275088548364400416034343698204186575808495617");
-
-/**
- * Generate a random 32-byte value
- */
-export function randomBytes32(): `0x${string}` {
+export function randomBytes32(): Uint8Array {
   const arr = new Uint8Array(32);
   crypto.getRandomValues(arr);
-  return toHex(arr);
+  return arr;
+}
+
+/**
+ * Convert Uint8Array to hex string
+ */
+export function toHex(bytes: Uint8Array): string {
+  return Buffer.from(bytes).toString('hex');
+}
+
+/**
+ * Convert hex string to Uint8Array
+ */
+export function fromHex(hex: string): Uint8Array {
+  const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex;
+  return new Uint8Array(Buffer.from(cleanHex, 'hex'));
 }
 
 /**
  * Generate commitment for deposit
- * commitment = keccak256(nullifier, secret) % FIELD_SIZE
+ * commitment = keccak256(nullifier || secret)
  *
- * IMPORTANT: Must match contract's generateCommitment function
+ * IMPORTANT: Must match Solana program's generate_commitment function
  */
 export function generateCommitment(
-  nullifier: `0x${string}`,
-  secret: `0x${string}`
-): `0x${string}` {
-  const hash = keccak256(encodePacked(["bytes32", "bytes32"], [nullifier, secret]));
-  const hashBigInt = BigInt(hash);
-  const modResult = hashBigInt % FIELD_SIZE;
-  return `0x${modResult.toString(16).padStart(64, '0')}` as `0x${string}`;
+  nullifier: Uint8Array,
+  secret: Uint8Array
+): Uint8Array {
+  const combined = new Uint8Array(64);
+  combined.set(nullifier, 0);
+  combined.set(secret, 32);
+  return keccak_256(combined);
 }
 
 /**
  * Generate nullifier hash for withdrawal
- * nullifierHash = keccak256(nullifier) % FIELD_SIZE
+ * nullifierHash = keccak256(nullifier)
  *
- * IMPORTANT: Must match contract's generateNullifierHash function
+ * IMPORTANT: Must match Solana program's generate_nullifier_hash function
  */
-export function generateNullifierHash(nullifier: `0x${string}`): `0x${string}` {
-  const hash = keccak256(encodePacked(["bytes32"], [nullifier]));
-  const hashBigInt = BigInt(hash);
-  const modResult = hashBigInt % FIELD_SIZE;
-  return `0x${modResult.toString(16).padStart(64, '0')}` as `0x${string}`;
+export function generateNullifierHash(nullifier: Uint8Array): Uint8Array {
+  return keccak_256(nullifier);
 }
 
 /**
  * Deposit note structure
  */
 export interface DepositNote {
-  nullifier: `0x${string}`;
-  secret: `0x${string}`;
-  commitment: `0x${string}`;
-  nullifierHash: `0x${string}`;
-  amount?: string; // Amount in BNB (e.g., "0.01", "0.1")
-  leafIndex?: number;
+  nullifier: string; // hex string
+  secret: string; // hex string
+  commitment: string; // hex string
+  nullifierHash: string; // hex string
+  amount?: string; // Amount in SOL (e.g., "0.1")
   timestamp?: number;
   status?: 'pending' | 'deposited' | 'queued' | 'processing' | 'failed' | 'completed';
   failureReason?: string;
-  depositTxHash?: string;
-  queueTxHash?: string;
-  withdrawalTxHash?: string;
-  recipient?: string;
+  depositTxHash?: string; // Solana transaction signature
+  queueTxHash?: string; // Solana transaction signature
+  withdrawalTxHash?: string; // Solana transaction signature
+  recipient?: string; // Solana address (base58)
   executeAfter?: number;
-  queueId?: number;
-  txFetchAttempted?: boolean;
-  walletAddress?: string; // Wallet address that created this deposit
+  walletAddress?: string; // Solana wallet address that created this deposit
 }
 
 /**
@@ -77,66 +81,20 @@ export function createDepositNote(): DepositNote {
   const nullifierHash = generateNullifierHash(nullifier);
 
   return {
-    nullifier,
-    secret,
-    commitment,
-    nullifierHash,
+    nullifier: toHex(nullifier),
+    secret: toHex(secret),
+    commitment: toHex(commitment),
+    nullifierHash: toHex(nullifierHash),
+    amount: "0.1", // Fixed 0.1 SOL deposits
+    status: 'pending',
   };
-}
-
-/**
- * Create change note for partial withdrawals
- * When withdrawing less than the full deposit, remaining balance is returned as new deposit
- */
-export function createChangeNote(
-  originalNote: DepositNote,
-  withdrawAmount: string
-): {
-  changeNote: DepositNote | null;
-  changeCommitment: `0x${string}`;
-} {
-  const depositAmount = parseFloat(originalNote.amount || '0');
-  const withdrawAmt = parseFloat(withdrawAmount);
-  const changeAmount = depositAmount - withdrawAmt;
-
-  // If no change needed (full withdrawal or invalid amounts)
-  if (changeAmount <= 0 || changeAmount < 0.0001) {
-    return {
-      changeNote: null,
-      changeCommitment: `0x${'0'.repeat(64)}` as `0x${string}`
-    };
-  }
-
-  // Generate new credentials for change
-  const changeNullifier = randomBytes32();
-  const changeSecret = randomBytes32();
-  const changeCommitment = generateCommitment(changeNullifier, changeSecret);
-  const changeNullifierHash = generateNullifierHash(changeNullifier);
-
-  const changeNote: DepositNote = {
-    nullifier: changeNullifier,
-    secret: changeSecret,
-    commitment: changeCommitment,
-    nullifierHash: changeNullifierHash,
-    amount: changeAmount.toFixed(4),
-    timestamp: Date.now(),
-    status: 'pending', // Will become 'deposited' after relayer processes
-    walletAddress: originalNote.walletAddress
-  };
-
-  console.log(`💰 Created change note: ${changeAmount.toFixed(4)} BNB (${changeCommitment.slice(0, 10)}...)`);
-
-  return { changeNote, changeCommitment };
 }
 
 /**
  * Encode deposit note to string for storage
- * Excludes temporary runtime properties to avoid circular references
  */
 export function encodeDepositNote(note: DepositNote): string {
-  // Create a clean copy without runtime-only properties
-  const { multiDepositNotes, changeCommitment, ...cleanNote } = note as any;
-  return JSON.stringify(cleanNote);
+  return JSON.stringify(note);
 }
 
 /**
@@ -144,19 +102,6 @@ export function encodeDepositNote(note: DepositNote): string {
  */
 export function decodeDepositNote(noteString: string): DepositNote {
   return JSON.parse(noteString) as DepositNote;
-}
-
-/**
- * Simplified Merkle proof generation
- * In production, use proper Merkle tree implementation
- */
-export function generateMerkleProof(
-  commitment: `0x${string}`,
-  allCommitments: `0x${string}`[]
-): `0x${string}`[] {
-  // Simplified: return empty proof
-  // In production, generate full Merkle path
-  return [];
 }
 
 /**
@@ -172,13 +117,10 @@ export function storeDepositNote(note: DepositNote): void {
   const allNotes = getAllDepositNotes();
   const existingIndex = allNotes.findIndex((n) => n.commitment === note.commitment);
 
-  // Clean the note before adding to array (remove circular references)
-  const { multiDepositNotes, changeCommitment, ...cleanNote } = note as any;
-
   if (existingIndex === -1) {
-    allNotes.push(cleanNote);
+    allNotes.push(note);
   } else {
-    allNotes[existingIndex] = cleanNote;
+    allNotes[existingIndex] = note;
   }
 
   localStorage.setItem("all_deposit_notes", JSON.stringify(allNotes));
@@ -197,7 +139,7 @@ export function getAllDepositNotes(): DepositNote[] {
 /**
  * Get deposit note by commitment
  */
-export function getDepositNote(commitment: `0x${string}`): DepositNote | null {
+export function getDepositNote(commitment: string): DepositNote | null {
   if (typeof window === 'undefined') return null; // SSR guard
   const key = `deposit_note_${commitment}`;
   const noteJson = localStorage.getItem(key);
@@ -208,7 +150,7 @@ export function getDepositNote(commitment: `0x${string}`): DepositNote | null {
 /**
  * Delete deposit note (after withdrawal)
  */
-export function deleteDepositNote(commitment: `0x${string}`): void {
+export function deleteDepositNote(commitment: string): void {
   if (typeof window === 'undefined') return; // SSR guard
   const key = `deposit_note_${commitment}`;
   localStorage.removeItem(key);
@@ -223,7 +165,7 @@ export function deleteDepositNote(commitment: `0x${string}`): void {
  * Update deposit note status
  */
 export function updateDepositNoteStatus(
-  commitment: `0x${string}`,
+  commitment: string,
   status: DepositNote['status'],
   additionalData?: Partial<DepositNote>
 ): void {
@@ -239,7 +181,7 @@ export function updateDepositNoteStatus(
 }
 
 /**
- * Get failed deposit notes (deposits that succeeded but withdrawal failed)
+ * Get failed deposit notes
  */
 export function getFailedNotes(): DepositNote[] {
   const allNotes = getAllDepositNotes();
@@ -262,17 +204,16 @@ export function getRetryableNotes(): DepositNote[] {
  */
 export interface WithdrawalTransaction {
   id: string; // Unique ID for this withdrawal
-  commitment: `0x${string}`; // Link to original deposit
-  amount: string; // Amount withdrawn (BNB)
-  recipient: string; // Recipient address
+  commitment: string; // Link to original deposit (hex string)
+  amount: string; // Amount withdrawn (SOL)
+  recipient: string; // Recipient Solana address (base58)
   delayMinutes: number; // Selected delay
-  queueTxHash?: string; // Transaction hash for queue
-  withdrawalTxHash?: string; // Transaction hash for final withdrawal
+  queueTxHash?: string; // Transaction signature for queue
+  withdrawalTxHash?: string; // Transaction signature for final withdrawal
   timestamp: number; // When queued
   executeAfter?: number; // When it can be executed
   status: 'queued' | 'processing' | 'completed' | 'failed';
   failureReason?: string;
-  queueId?: number; // Queue ID from contract
   walletAddress?: string; // Wallet address that created this withdrawal
 }
 
@@ -289,10 +230,8 @@ export function storeWithdrawalTransaction(withdrawal: WithdrawalTransaction): v
   const existingIndex = allWithdrawals.findIndex((w) => w.id === withdrawal.id);
 
   if (existingIndex === -1) {
-    // New withdrawal - add it
     allWithdrawals.push(withdrawal);
   } else {
-    // Existing withdrawal - update it
     allWithdrawals[existingIndex] = withdrawal;
   }
 
@@ -310,50 +249,6 @@ export function getAllWithdrawalTransactions(): WithdrawalTransaction[] {
 }
 
 /**
- * Clean up duplicate withdrawal transactions
- * Keeps only the latest entry for each commitment
- */
-export function cleanupDuplicateWithdrawals(): number {
-  if (typeof window === 'undefined') return 0;
-
-  const allWithdrawals = getAllWithdrawalTransactions();
-
-  // Group by commitment
-  const byCommitment = new Map<string, WithdrawalTransaction[]>();
-  for (const w of allWithdrawals) {
-    const existing = byCommitment.get(w.commitment) || [];
-    existing.push(w);
-    byCommitment.set(w.commitment, existing);
-  }
-
-  // Keep only the latest for each commitment (highest timestamp)
-  const cleaned: WithdrawalTransaction[] = [];
-  let duplicatesRemoved = 0;
-
-  for (const [commitment, withdrawals] of byCommitment.entries()) {
-    if (withdrawals.length > 1) {
-      // Sort by timestamp descending and keep the latest
-      withdrawals.sort((a, b) => b.timestamp - a.timestamp);
-      cleaned.push(withdrawals[0]);
-      duplicatesRemoved += withdrawals.length - 1;
-
-      // Remove old entries from individual storage
-      for (let i = 1; i < withdrawals.length; i++) {
-        const key = `withdrawal_${withdrawals[i].id}`;
-        localStorage.removeItem(key);
-      }
-    } else {
-      cleaned.push(withdrawals[0]);
-    }
-  }
-
-  // Update the all_withdrawals list
-  localStorage.setItem("all_withdrawals", JSON.stringify(cleaned));
-
-  return duplicatesRemoved;
-}
-
-/**
  * Update withdrawal transaction status
  */
 export function updateWithdrawalStatus(
@@ -363,68 +258,50 @@ export function updateWithdrawalStatus(
 ): void {
   if (typeof window === 'undefined') return; // SSR guard
 
-  console.log(`[updateWithdrawalStatus] Updating withdrawal ${id.slice(0, 10)}... to status: ${status}`);
-
   const key = `withdrawal_${id}`;
   const withdrawalJson = localStorage.getItem(key);
-  if (!withdrawalJson) {
-    console.log(`[updateWithdrawalStatus] ⚠️ Withdrawal not found in individual storage`);
-    return;
-  }
+  if (!withdrawalJson) return;
 
   const withdrawal = JSON.parse(withdrawalJson) as WithdrawalTransaction;
-  console.log(`[updateWithdrawalStatus] Current status: ${withdrawal.status}, new status: ${status}`);
-
   withdrawal.status = status;
   if (additionalData) {
     Object.assign(withdrawal, additionalData);
   }
 
   localStorage.setItem(key, JSON.stringify(withdrawal));
-  console.log(`[updateWithdrawalStatus] ✅ Updated individual storage`);
 
   // Update in the list
   const allWithdrawals = getAllWithdrawalTransactions();
-  console.log(`[updateWithdrawalStatus] Found ${allWithdrawals.length} withdrawals in list`);
-
   const index = allWithdrawals.findIndex((w) => w.id === id);
   if (index !== -1) {
-    console.log(`[updateWithdrawalStatus] Found at index ${index}, updating...`);
     allWithdrawals[index] = withdrawal;
     localStorage.setItem("all_withdrawals", JSON.stringify(allWithdrawals));
-    console.log(`[updateWithdrawalStatus] ✅ Updated all_withdrawals list`);
-  } else {
-    console.log(`[updateWithdrawalStatus] ⚠️ Withdrawal not found in list!`);
   }
 }
 
 /**
  * Get deposit notes for a specific wallet address
- * Returns only deposits created by this wallet
  */
 export function getDepositNotesForWallet(walletAddress: string): DepositNote[] {
   if (typeof window === 'undefined') return [];
   if (!walletAddress) return [];
 
   const allNotes = getAllDepositNotes();
-  // Filter by wallet address if available, otherwise assume all local notes belong to user
   return allNotes.filter(note =>
-    !note.walletAddress || note.walletAddress.toLowerCase() === walletAddress.toLowerCase()
+    !note.walletAddress || note.walletAddress === walletAddress
   );
 }
 
 /**
  * Get withdrawal transactions for a specific wallet address
- * Returns only withdrawals created by this wallet
  */
 export function getWithdrawalsForWallet(walletAddress: string): WithdrawalTransaction[] {
   if (typeof window === 'undefined') return [];
   if (!walletAddress) return [];
 
   const allWithdrawals = getAllWithdrawalTransactions();
-  // Filter by wallet address if available, otherwise assume all local withdrawals belong to user
   return allWithdrawals.filter(withdrawal =>
-    !withdrawal.walletAddress || withdrawal.walletAddress.toLowerCase() === walletAddress.toLowerCase()
+    !withdrawal.walletAddress || withdrawal.walletAddress === walletAddress
   );
 }
 
@@ -437,7 +314,7 @@ export interface CombinedTransaction {
   amount: string;
   status: string;
   txHash?: string;
-  commitment: `0x${string}`;
+  commitment: string;
   recipient?: string;
   depositData?: DepositNote;
   withdrawalData?: WithdrawalTransaction;
@@ -446,10 +323,8 @@ export interface CombinedTransaction {
 /**
  * Get combined transaction history (deposits + withdrawals)
  * Sorted by timestamp (newest first)
- * @param walletAddress Optional wallet address to filter by
  */
 export function getCombinedTransactionHistory(walletAddress?: string): CombinedTransaction[] {
-  // Use wallet-filtered functions if address provided, otherwise get all
   const deposits = walletAddress ? getDepositNotesForWallet(walletAddress) : getAllDepositNotes();
   const withdrawals = walletAddress ? getWithdrawalsForWallet(walletAddress) : getAllWithdrawalTransactions();
 
@@ -460,7 +335,7 @@ export function getCombinedTransactionHistory(walletAddress?: string): CombinedT
     combined.push({
       type: 'deposit',
       timestamp: deposit.timestamp || 0,
-      amount: deposit.amount || '0.01',
+      amount: deposit.amount || '0.1',
       status: deposit.status || 'pending',
       txHash: deposit.depositTxHash,
       commitment: deposit.commitment,

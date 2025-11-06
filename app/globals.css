@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #342E37;
-  --foreground: #ffffff;
-  --primary-blue: #4F9CF9;
-  --secondary-blue: #2E7DD2;
-  --accent-blue: #6FB4FF;
-  --card-bg: #423C45;
-  --card-border: #554D58;
-  --input-bg: #2D272F;
+  --background: #ffffff;
+  --foreground: #000000;
+  --primary: #efb62f;
+  --primary-hover: #d9a429;
+  --card-bg: #ffffff;
+  --card-border: #e5e5e5;
+  --input-bg: #ffffff;
+  --input-border: #e5e5e5;
 }
 
 body {
@@ -17,6 +17,21 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
+}
+
+/* Wallet adapter button styling */
+.wallet-adapter-button {
+  background-color: #efb62f !important;
+  color: #000000 !important;
+}
+
+.wallet-adapter-button:hover {
+  background-color: #d9a429 !important;
+}
+
+.wallet-adapter-button-trigger {
+  background-color: #efb62f !important;
+  color: #000000 !important;
 }
 
 @layer utilities {

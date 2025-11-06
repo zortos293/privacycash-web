@@ -204,8 +204,8 @@ export interface Translation {
 export const translations: Record<'en' | 'zh', Translation> = {
   en: {
     // Header
-    appName: 'AnonBNB',
-    tagline: 'Fully Private BNB Transfers',
+    appName: 'Privacy Mixer',
+    tagline: 'Private SOL Transfers via ZCASH Routing',
 
     // Navigation
     howItWorks: 'How It Works',
@@ -217,8 +217,8 @@ export const translations: Record<'en' | 'zh', Translation> = {
     backup: 'Backup',
 
     // Tab descriptions
-    depositDescription: 'Add BNB to your private balance',
-    sendDescription: 'Send from your private balance to any address',
+    depositDescription: 'Add SOL to your private balance via ZCASH',
+    sendDescription: 'Send from your private balance to any Solana address',
     backupDescription: 'Export or import your deposit credentials',
 
     // Pool stats
@@ -233,7 +233,7 @@ export const translations: Record<'en' | 'zh', Translation> = {
     depositToPool: 'Deposit to Pool',
     sendPrivately: 'Send Privately',
     amount: 'Amount',
-    fixedAmount: 'Fixed at 0.01 BNB per deposit',
+    fixedAmount: 'Fixed at 0.1 SOL per deposit',
     recipientAddress: 'Recipient Address',
     delayTime: 'Delay Time',
     minutes: 'minutes',
@@ -327,11 +327,11 @@ export const translations: Record<'en' | 'zh', Translation> = {
     step1Title: '1. Generate Your Secret Credentials',
     step1Description: 'When you initiate a deposit, the app generates two cryptographically secure random 32-byte (256-bit) values using your browser\'s crypto.getRandomValues(). These are your nullifier and secret - the keys to your deposit.',
     step2Title: '2. Deposit to Privacy Pool & Merkle Tree',
-    step2Description: 'You send BNB along with your commitment hash to the smart contract. The contract adds your commitment to a 20-level binary Merkle tree (supports up to 1,048,576 deposits). The contract only knows the commitment hash - it has NO knowledge of your nullifier, secret, or future withdrawal address.',
+    step2Description: 'You send SOL along with your commitment hash. The program swaps SOL to wrapped ZEC via Jupiter, then stores your commitment on-chain. The program only knows the commitment hash - it has NO knowledge of your nullifier, secret, or future withdrawal address.',
     step3Title: '3. Queue Withdrawal with Cryptographic Proof',
     step3Description: 'When ready to withdraw, you provide your nullifier and secret. The contract verifies ownership by recomputing the commitment hash, generates a nullifier hash to prevent double-spending, and validates your Merkle proof. Your withdrawal is then queued with your chosen time delay.',
     step4Title: '4. Automated Relayer Executes Withdrawal',
-    step4Description: 'After your delay expires, our relayer service automatically processes the withdrawal. It sends BNB from the pool to your recipient using the relayer\'s wallet, completely breaking the on-chain link between your deposit and the final recipient.',
+    step4Description: 'After your delay expires, the relayer service automatically processes the withdrawal. It swaps ZEC back to SOL via Jupiter and sends to your recipient, completely breaking the on-chain link between your deposit and withdrawal addresses.',
     previous: 'Previous',
     next: 'Next',
     getStarted: 'Get Started',
@@ -355,7 +355,7 @@ export const translations: Record<'en' | 'zh', Translation> = {
     automatedProcessing: 'Automated Processing',
     relayerChecksQueue: 'Relayer checks queue every 60s',
     callsProcessWithdrawals: 'Calls processWithdrawals() after delay',
-    transfersToRecipient: 'Transfers 0.0996 BNB to recipient',
+    transfersToRecipient: 'Transfers 0.097 SOL to recipient',
     marksNullifierSpent: 'Marks nullifier as spent',
     pool: 'Pool',
     relayer: 'Relayer',
@@ -368,10 +368,10 @@ export const translations: Record<'en' | 'zh', Translation> = {
     depositAnonymous: 'Your deposit is now anonymous in the pool',
 
     // Welcome modal
-    welcomeTitle: 'Welcome to AnonBNB',
-    welcomeSubtitle: 'The First Fully Automated Privacy Mixer on BNB Chain',
-    welcomeFeature1Title: 'Fixed 0.01 BNB Deposits',
-    welcomeFeature1Description: 'All deposits are exactly 0.01 BNB for maximum anonymity',
+    welcomeTitle: 'Welcome to Privacy Mixer',
+    welcomeSubtitle: 'Solana Privacy Protocol with ZCASH Routing',
+    welcomeFeature1Title: 'Fixed 0.1 SOL Deposits',
+    welcomeFeature1Description: 'All deposits are exactly 0.1 SOL, routed through ZCASH for maximum privacy',
     welcomeFeature2Title: 'Automated Relayer System',
     welcomeFeature2Description: 'Withdrawals are automatically processed after your chosen delay',
     welcomeFeature3Title: 'Time-Delayed Privacy',
@@ -407,8 +407,8 @@ export const translations: Record<'en' | 'zh', Translation> = {
 
   zh: {
     // Header
-    appName: 'AnonBNB',
-    tagline: '完全隐私的BNB转账',
+    appName: 'Privacy Mixer',
+    tagline: '通过ZCASH路由的私密SOL转账',
 
     // Navigation
     howItWorks: '工作原理',
@@ -420,7 +420,7 @@ export const translations: Record<'en' | 'zh', Translation> = {
     backup: '备份',
 
     // Tab descriptions
-    depositDescription: '向您的隐私余额添加BNB',
+    depositDescription: '通过ZCASH向您的隐私余额添加SOL',
     sendDescription: '从您的隐私余额发送到任何地址',
     backupDescription: '导出或导入您的存款凭证',
 
@@ -436,7 +436,7 @@ export const translations: Record<'en' | 'zh', Translation> = {
     depositToPool: '存入资金池',
     sendPrivately: '隐私发送',
     amount: '金额',
-    fixedAmount: '每次存款固定为0.01 BNB',
+    fixedAmount: '每次存款固定为0.1 SOL',
     recipientAddress: '接收地址',
     delayTime: '延迟时间',
     minutes: '分钟',
@@ -530,11 +530,11 @@ export const translations: Record<'en' | 'zh', Translation> = {
     step1Title: '1. 生成您的密钥凭证',
     step1Description: '当您发起存款时，应用程序使用浏览器的crypto.getRandomValues()生成两个密码学安全的随机32字节（256位）值。这些是您的无效化器和密钥 - 您存款的钥匙。',
     step2Title: '2. 存入隐私池和默克尔树',
-    step2Description: '您将BNB和您的承诺哈希一起发送到智能合约。合约将您的承诺添加到20级二叉默克尔树（支持多达1,048,576次存款）。合约只知道承诺哈希 - 它不知道您的无效化器、密钥或未来的提款地址。',
+    step2Description: '您发送SOL和承诺哈希。程序通过Jupiter将SOL兑换为包装的ZEC，然后在链上存储您的承诺。程序只知道承诺哈希 - 它不知道您的无效化器、密钥或未来的提款地址。',
     step3Title: '3. 用密码学证明排队提款',
     step3Description: '当准备提款时，您提供您的无效化器和密钥。合约通过重新计算承诺哈希来验证所有权，生成无效化器哈希以防止双重支付，并验证您的默克尔证明。然后您的提款将按照您选择的延迟时间排队。',
     step4Title: '4. 自动中继器执行提款',
-    step4Description: '延迟到期后，我们的中继服务自动处理提款。它使用中继器的钱包从资金池向您的接收者发送BNB，完全打破您的存款和最终接收者之间的链上联系。',
+    step4Description: '延迟到期后，中继服务自动处理提款。它通过Jupiter将ZEC兑换回SOL并发送给您的接收者，完全打破您的存款和提款地址之间的链上联系。',
     previous: '上一步',
     next: '下一步',
     getStarted: '开始使用',
@@ -558,7 +558,7 @@ export const translations: Record<'en' | 'zh', Translation> = {
     automatedProcessing: '自动处理',
     relayerChecksQueue: '中继器每60秒检查队列',
     callsProcessWithdrawals: '延迟后调用processWithdrawals()',
-    transfersToRecipient: '向接收者转账0.0996 BNB',
+    transfersToRecipient: '向接收者转账0.097 SOL',
     marksNullifierSpent: '标记无效化器为已使用',
     pool: '资金池',
     relayer: '中继器',
@@ -571,10 +571,10 @@ export const translations: Record<'en' | 'zh', Translation> = {
     depositAnonymous: '您的存款现在在资金池中是匿名的',
 
     // Welcome modal
-    welcomeTitle: '欢迎使用AnonBNB',
-    welcomeSubtitle: 'BNB链上首个全自动隐私混币器',
-    welcomeFeature1Title: '固定0.01 BNB存款',
-    welcomeFeature1Description: '所有存款都恰好为0.01 BNB，实现最大匿名性',
+    welcomeTitle: '欢迎使用Privacy Mixer',
+    welcomeSubtitle: 'Solana隐私协议与ZCASH路由',
+    welcomeFeature1Title: '固定0.1 SOL存款',
+    welcomeFeature1Description: '所有存款都恰好为0.1 SOL，通过ZCASH路由实现最大隐私',
     welcomeFeature2Title: '自动中继系统',
     welcomeFeature2Description: '提款在您选择的延迟后自动处理',
     welcomeFeature3Title: '延时隐私保护',

@@ -1,0 +1,148 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TransactionStatus {
+  PENDING_DEPOSIT
+  DEPOSIT_RECEIVED
+
+  // NEW: Complete privacy flow (SOL → ZEC → Z-addresses → SOL)
+  INIT                        // Initializing privacy mix
+  BRIDGE_SOL_TO_ZEC          // NEAR bridge: SOL → ZEC to t-address A
+  SHIELD_TO_ZADDRESS_B       // ZCASH: t-address A → z-address B (shielding)
+  SHIELDED_TRANSFER_B_TO_C   // ZCASH: z-address B → z-address C (fully private)
+  DESHIELD_TO_TADDRESS_D     // ZCASH: z-address C → t-address D (deshielding)
+  BRIDGE_ZEC_TO_SOL          // NEAR bridge: ZEC → SOL to recipient
+
+  // Legacy statuses (old ZCASH flow)
+  SWAPPING_TO_ZEC
+  BRIDGING_TO_ZEC_MAINNET
+  SHIELDING_TO_ZADDRESS
+  WAITING_DELAY
+  SHIELDED_TRANSFER
+  DESHIELDING_FROM_ZADDRESS
+  BRIDGING_TO_SOLANA
+  SWAPPING_TO_SOL
+  SENDING_TO_RECIPIENT
+
+  // NEAR Intents multi-hop flow (alternative)
+  HOP_1_DEPOSITING    // SOL → ZEC
+  HOP_1_DELAY         // 2.5 min wait
+  HOP_2_DEPOSITING    // ZEC → USDC
+  HOP_2_DELAY         // 2.5 min wait
+  HOP_3_DEPOSITING    // USDC → SOL
+  FINAL_TRANSFER      // Wallet C → Recipient
+
+  COMPLETED
+  FAILED
+}
+
+enum WalletPurpose {
+  DEPOSIT              // Solana deposit wallet
+  INTERMEDIATE         // Solana intermediate wallet (legacy)
+
+  // Multi-wallet privacy mixer (NEAR Intents)
+  WALLET_A             // First intermediate wallet (receives ZEC)
+  WALLET_B             // Second intermediate wallet (receives USDC)
+  WALLET_C             // Third intermediate wallet (receives SOL)
+  WALLET_D             // Optional 4th wallet
+  WALLET_E             // Optional 5th wallet
+
+  // NEW: ZCASH privacy mix wallets (SOL → ZEC → Z-addresses → SOL)
+  ZEC_T_ADDRESS_A      // Entry t-address: receives ZEC from NEAR bridge
+  ZEC_Z_ADDRESS_B      // First z-address: receives shielded funds
+  ZEC_Z_ADDRESS_C      // Second z-address: receives shielded transfer (fully private)
+  ZEC_T_ADDRESS_D      // Exit t-address: sends ZEC to NEAR bridge
+
+  // ZCASH wallets (legacy)
+  ZEC_T_ADDRESS        // Zcash transparent address (for bridge)
+  ZEC_Z_ADDRESS_1      // First Zcash shielded address
+  ZEC_Z_ADDRESS_2      // Second Zcash shielded address (privacy hop)
+}
+
+enum StepStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+model Transaction {
+  id                String              @id @default(cuid())
+  status            TransactionStatus   @default(PENDING_DEPOSIT)
+  depositAddress    String              @unique
+  recipientAddress  String
+  amount            Float               // SOL amount
+  delayMinutes      Int                 @default(0) // Time delay before final withdrawal (disabled)
+  platformFee       Float               @default(0.0025) // 0.25%
+  relayerFee        Float               @default(0.002) // Fixed 0.002 SOL
+
+  // Tracking
+  depositTxSignature     String?
+  zecSwapTxSignature     String?
+  solSwapTxSignature     String?
+  withdrawalTxSignature  String?
+
+  errorMessage      String?
+  retryCount        Int                 @default(0) // Number of retry attempts
+  maxRetries        Int                 @default(3) // Max retry attempts before permanent failure
+
+  // Privacy mixer metadata (NEAR Intents flow)
+  metadata          String?             // JSON: privacy plan, hop details, etc.
+  additionalData    Json?               // Additional flexible data storage
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  completedAt       DateTime?
+
+  // Relations
+  wallets           Wallet[]
+  steps             TransactionStep[]
+
+  @@index([status])
+  @@index([depositAddress])
+}
+
+model Wallet {
+  id                  String        @id @default(cuid())
+  transactionId       String
+  walletAddress       String        @unique
+  encryptedPrivateKey String        // AES-256-GCM encrypted
+  purpose             WalletPurpose
+
+  createdAt           DateTime      @default(now())
+
+  // Relations
+  transaction         Transaction   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+}
+
+model TransactionStep {
+  id            String       @id @default(cuid())
+  transactionId String
+  stepName      String
+  status        StepStatus   @default(PENDING)
+  details       String?      // JSON string with additional info
+  txSignature   String?      // Solana transaction signature if applicable
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  // Relations
+  transaction   Transaction  @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+  @@index([status])
+}

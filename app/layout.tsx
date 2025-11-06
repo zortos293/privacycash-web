@@ -4,8 +4,8 @@ import { ClientProviders } from "@/components/ClientProviders";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "AnonBNB - Private BNB Transfers",
-  description: "Transfer BNB privately using zero-knowledge proofs on BNB Chain",
+  title: "Mertcash - Privacy Mixer",
+  description: "Transfer SOL privately using zero-knowledge proofs on Solana",
   icons: {
     icon: '/favicon.ico',
   },
