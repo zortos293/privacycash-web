@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { TransactionStep } from '@prisma/client';
 
 export async function GET(
   request: NextRequest,
@@ -26,7 +27,7 @@ export async function GET(
     // Parse JSON details field into metadata for frontend compatibility
     const formattedTransaction = {
       ...transaction,
-      steps: transaction.steps.map(step => ({
+      steps: transaction.steps.map((step: TransactionStep) => ({
         ...step,
         metadata: step.details ? JSON.parse(step.details) : {},
       })),

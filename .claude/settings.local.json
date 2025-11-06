@@ -44,7 +44,8 @@
       "WebFetch(domain:dev.jup.ag)",
       "Bash(bun run:*)",
       "Bash(echo:*)",
-      "WebFetch(domain:docs.near-intents.org)"
+      "WebFetch(domain:docs.near-intents.org)",
+      "Bash(npx eslint:*)"
     ],
     "deny": [],
     "ask": []
