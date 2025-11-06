@@ -174,7 +174,7 @@ async function main() {
     timestamp: new Date().toISOString(),
   };
 
-  const fs = require('fs');
+  const fs = await import('fs');
   fs.writeFileSync(
     'test-wallets.json',
     JSON.stringify(walletInfo, null, 2)

@@ -11,6 +11,7 @@
 process.env.NEAR_NO_LOGS = 'true';
 
 import { keyStores, KeyPair, connect, Account } from 'near-api-js';
+import axios from 'axios';
 
 const NEAR_NETWORK = process.env.NEAR_NETWORK || 'mainnet';
 const NEAR_ACCOUNT_ID = process.env.NEAR_ACCOUNT || 'mertcash.near';
@@ -127,8 +128,7 @@ export async function executeHop2Withdrawal(params: {
     referral = 'privacycash'
   } = params;
 
-  // Import NEAR Intents API helper
-  const axios = require('axios');
+  // NEAR Intents API configuration
   const NEAR_INTENTS_API = process.env.NEAR_INTENTS_API_URL || 'https://1click.chaindefuser.com';
   const NEAR_INTENTS_JWT = process.env.NEAR_INTENTS_JWT;
 

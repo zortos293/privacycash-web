@@ -48,6 +48,7 @@ import {
   type PrivacyMixPlan,
 } from '../lib/privacy-mixer-near';
 import { executeHop2Withdrawal, checkNearCredentials, testNearConnection } from '../lib/near-helper';
+import axios from 'axios';
 
 const NETWORK = 'mainnet';
 const RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.mainnet.solana.com';
@@ -411,7 +412,6 @@ async function handleStep3_DelayBeforeHop2(tx: any) {
     }
 
     // Submit transaction hash to NEAR Intents
-    const axios = require('axios');
     const NEAR_INTENTS_API = process.env.NEAR_INTENTS_API_URL || 'https://1click.chaindefuser.com';
     const NEAR_INTENTS_JWT = process.env.NEAR_INTENTS_JWT;
 

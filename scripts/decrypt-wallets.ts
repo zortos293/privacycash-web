@@ -3,6 +3,7 @@ import { prisma } from '../lib/db';
 import { decryptPrivateKey } from '../lib/encryption';
 import { Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
+import fs from 'fs';
 
 /**
  * Decrypt all wallets in database
@@ -154,7 +155,6 @@ if (process.argv.includes('--export-json')) {
   exportWalletsToJson()
     .then(data => {
       const filename = `wallet-export-${Date.now()}.json`;
-      const fs = require('fs');
       fs.writeFileSync(filename, JSON.stringify(data, null, 2));
       console.log(`✅ Exported to ${filename}`);
       console.log('⚠️  DELETE THIS FILE AFTER USE - Contains private keys!');
