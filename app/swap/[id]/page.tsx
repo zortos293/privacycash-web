@@ -21,6 +21,7 @@ interface Transaction {
   depositAddress: string;
   recipientAddress: string;
   amount: number;
+  tokenType?: string;
   createdAt: string;
   completedAt: string | null;
   steps: TransactionStep[];
@@ -129,7 +130,9 @@ export default function SwapPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-600">Amount</p>
-                <p className="text-lg font-semibold text-[#efb62f]">{transaction.amount} SOL</p>
+                <p className="text-lg font-semibold text-[#efb62f]">
+                  {transaction.amount} {transaction.tokenType || 'SOL'}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Started</p>

@@ -28,6 +28,7 @@ import {
   sendAndConfirmTransaction,
   Keypair,
 } from '@solana/web3.js';
+import { getAssociatedTokenAddress, getAccount } from '@solana/spl-token';
 import {
   prisma,
   createWallet,
@@ -57,6 +58,77 @@ const connection = new Connection(RPC_URL, 'confirmed');
 
 const POLLING_INTERVAL = 15000; // 15 seconds
 const MIN_BALANCE_FOR_DEPOSIT = 0.001 * LAMPORTS_PER_SOL;
+
+// Token Mint Addresses
+const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+const SOL_MINT = new PublicKey('So11111111111111111111111111111111111111112'); // Wrapped SOL
+const MIN_USDC_BALANCE = 1 * 1_000_000; // 1 USDC (6 decimals)
+const JUPITER_API = 'https://quote-api.jup.ag/v6';
+
+/**
+ * Swap USDC to SOL via Jupiter
+ */
+async function swapUSDCtoSOL(
+  depositKeypair: Keypair,
+  usdcAmount: number
+): Promise<{ solAmount: number; signature: string }> {
+  console.log(`\n🔄 Swapping ${usdcAmount} USDC to SOL via Jupiter...`);
+
+  const usdcAmountRaw = Math.floor(usdcAmount * 1_000_000); // USDC has 6 decimals
+
+  try {
+    // Get quote from Jupiter
+    const quoteResponse = await axios.get(`${JUPITER_API}/quote`, {
+      params: {
+        inputMint: USDC_MINT.toString(),
+        outputMint: SOL_MINT.toString(),
+        amount: usdcAmountRaw,
+        slippageBps: 50, // 0.5% slippage
+      },
+    });
+
+    const quote = quoteResponse.data;
+    const outputAmount = parseInt(quote.outAmount) / LAMPORTS_PER_SOL;
+
+    console.log(`   Quote received: ${outputAmount} SOL`);
+
+    // Get swap transaction
+    const swapResponse = await axios.post(`${JUPITER_API}/swap`, {
+      quoteResponse: quote,
+      userPublicKey: depositKeypair.publicKey.toString(),
+      wrapAndUnwrapSol: true,
+      dynamicComputeUnitLimit: true,
+    });
+
+    const { swapTransaction } = swapResponse.data;
+
+    // Deserialize and sign transaction
+    const transactionBuf = Buffer.from(swapTransaction, 'base64');
+    const transaction = Transaction.from(transactionBuf);
+    transaction.sign(depositKeypair);
+
+    // Send transaction
+    const signature = await connection.sendRawTransaction(transaction.serialize(), {
+      skipPreflight: false,
+      maxRetries: 3,
+    });
+
+    console.log(`   Swap transaction sent: ${signature}`);
+
+    // Wait for confirmation
+    await connection.confirmTransaction(signature, 'confirmed');
+
+    console.log(`✅ Swap completed: ${usdcAmount} USDC → ${outputAmount} SOL`);
+
+    return {
+      solAmount: outputAmount,
+      signature,
+    };
+  } catch (error) {
+    console.error('❌ Jupiter swap failed:', error);
+    throw new Error(`Failed to swap USDC to SOL: ${error}`);
+  }
+}
 
 /**
  * PRIVACY CASH RELAYER - NEAR INTENTS ONLY
@@ -102,7 +174,7 @@ export async function startRelayer() {
 }
 
 /**
- * Detect new deposits
+ * Detect new deposits (SOL or USDC)
  */
 async function processDeposits() {
   const pendingDeposits = await checkForDeposits();
@@ -112,17 +184,46 @@ async function processDeposits() {
       const depositWallet = tx.wallets.find((w) => w.purpose === 'DEPOSIT');
       if (!depositWallet) continue;
 
-      const balance = await connection.getBalance(new PublicKey(depositWallet.walletAddress));
+      const depositPubkey = new PublicKey(depositWallet.walletAddress);
+      const tokenType = tx.tokenType || 'SOL';
 
-      if (balance >= MIN_BALANCE_FOR_DEPOSIT) {
-        console.log(`\n💰 NEW DEPOSIT: ${balance / LAMPORTS_PER_SOL} SOL (tx: ${tx.id})`);
+      let hasDeposit = false;
+      let depositAmount = 0;
 
+      if (tokenType === 'SOL') {
+        // Check SOL balance
+        const balance = await connection.getBalance(depositPubkey);
+        if (balance >= MIN_BALANCE_FOR_DEPOSIT) {
+          hasDeposit = true;
+          depositAmount = balance / LAMPORTS_PER_SOL;
+          console.log(`\n💰 NEW SOL DEPOSIT: ${depositAmount} SOL (tx: ${tx.id})`);
+        }
+      } else if (tokenType === 'USDC') {
+        // Check USDC token account balance
+        try {
+          const tokenAccount = await getAssociatedTokenAddress(USDC_MINT, depositPubkey);
+          const accountInfo = await getAccount(connection, tokenAccount);
+          const balance = Number(accountInfo.amount);
+
+          if (balance >= MIN_USDC_BALANCE) {
+            hasDeposit = true;
+            depositAmount = balance / 1_000_000; // Convert to USDC
+            console.log(`\n💰 NEW USDC DEPOSIT: ${depositAmount} USDC (tx: ${tx.id})`);
+          }
+        } catch (error) {
+          // Token account might not exist yet
+          console.log(`   Waiting for USDC token account for ${tx.id}`);
+        }
+      }
+
+      if (hasDeposit) {
         await updateTransactionStatus(tx.id, 'DEPOSIT_RECEIVED');
 
         const depositStep = tx.steps.find((s) => s.stepName === 'Waiting for deposit');
         if (depositStep) {
           await updateStepStatus(depositStep.id, 'COMPLETED', {
-            balance: balance / LAMPORTS_PER_SOL,
+            balance: depositAmount,
+            tokenType,
           });
         }
       }
@@ -199,16 +300,48 @@ async function processTransaction(tx: any) {
 async function handleStep1_CreatePrivacyPlan(tx: any) {
   console.log(`\n━━━ STEP 1: Create Privacy Mix Plan ━━━`);
   console.log(`Transaction: ${tx.id}`);
+  console.log(`Token Type: ${tx.tokenType || 'SOL'}`);
 
   const depositWallet = tx.wallets.find((w: any) => w.purpose === 'DEPOSIT');
   if (!depositWallet) throw new Error('Deposit wallet not found');
 
-  const depositBalance = await connection.getBalance(new PublicKey(depositWallet.walletAddress));
-  const depositAmount = depositBalance / LAMPORTS_PER_SOL;
-  const relayerFee = tx.relayerFee || 0.001;
-  const amountToMix = depositAmount - relayerFee;
+  const depositKeypair = await getWalletKeypair(depositWallet.walletAddress, tx.id);
+  const depositPubkey = new PublicKey(depositWallet.walletAddress);
+  const tokenType = tx.tokenType || 'SOL';
 
-  console.log(`💰 Deposit: ${depositAmount} SOL`);
+  let depositAmount = 0;
+  let amountInSOL = 0;
+
+  // Get deposit amount based on token type
+  if (tokenType === 'SOL') {
+    const balance = await connection.getBalance(depositPubkey);
+    depositAmount = balance / LAMPORTS_PER_SOL;
+    amountInSOL = depositAmount;
+    console.log(`💰 Deposit: ${depositAmount} SOL`);
+  } else if (tokenType === 'USDC') {
+    const tokenAccount = await getAssociatedTokenAddress(USDC_MINT, depositPubkey);
+    const accountInfo = await getAccount(connection, tokenAccount);
+    const usdcBalance = Number(accountInfo.amount);
+    depositAmount = usdcBalance / 1_000_000;
+    console.log(`💰 Deposit: ${depositAmount} USDC`);
+
+    // Convert USDC to SOL via Jupiter
+    console.log(`\n🔄 Converting USDC to SOL via Jupiter...`);
+    await addTransactionStep(tx.id, 'Converting USDC to SOL', 'IN_PROGRESS');
+
+    const swapResult = await swapUSDCtoSOL(depositKeypair, depositAmount);
+    amountInSOL = swapResult.solAmount;
+
+    await addTransactionStep(tx.id, 'USDC to SOL conversion completed', 'COMPLETED', {
+      usdcAmount: depositAmount,
+      solAmount: amountInSOL,
+      swapSignature: swapResult.signature,
+    });
+  }
+
+  const relayerFee = tx.relayerFee || 0.001;
+  const amountToMix = amountInSOL - relayerFee;
+
   console.log(`💸 Relayer fee: ${relayerFee} SOL`);
   console.log(`🎭 Amount to mix: ${amountToMix} SOL`);
 
@@ -271,7 +404,7 @@ async function handleStep1_CreatePrivacyPlan(tx: any) {
   console.log(`\n📤 Depositing to HOP 1...`);
   const hop1 = plan.hops[0];
 
-  const depositKeypair = await getWalletKeypair(depositWallet.walletAddress, tx.id);
+  // depositKeypair already declared at the top of the function
 
   // Send SOL to hop 1 deposit address
   const depositTx = new Transaction().add(
