@@ -264,7 +264,7 @@ export default function Home() {
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex flex-col items-center">
                         <div className="w-12 h-12 rounded-full bg-[#efb62f]/20 border-2 border-[#efb62f] flex items-center justify-center mb-2">
-                          <span className="text-[#efb62f] font-bold">SOL</span>
+                          <span className="text-[#efb62f] font-bold">{selectedToken}</span>
                         </div>
                         <span className="text-gray-600">Start</span>
                       </div>
@@ -278,7 +278,7 @@ export default function Home() {
                       <ArrowRight className="text-gray-400" />
                       <div className="flex flex-col items-center">
                         <div className="w-12 h-12 rounded-full bg-[#efb62f]/20 border-2 border-[#efb62f] flex items-center justify-center mb-2">
-                          <span className="text-[#efb62f] font-bold">SOL</span>
+                          <span className="text-[#efb62f] font-bold">{selectedToken}</span>
                         </div>
                         <span className="text-gray-600">Recipient</span>
                       </div>
@@ -320,11 +320,11 @@ export default function Home() {
                   <span className="text-[#efb62f] font-bold text-xl">1</span>
                 </div>
                 <CardTitle className="text-black">Cross-Chain Swap</CardTitle>
-                <CardDescription className="text-[#efb62f] text-xs mt-2">SOL → ZEC</CardDescription>
+                <CardDescription className="text-[#efb62f] text-xs mt-2">{selectedToken} → ZEC</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 text-sm">
-                  Your SOL is swapped to ZEC (Zcash) via NEAR Intents and deposited into the internal multi-token pool on NEAR Protocol
+                  Your {selectedToken} is swapped to ZEC (Zcash) via NEAR Intents and deposited into the internal multi-token pool on NEAR Protocol
                 </p>
               </CardContent>
             </Card>
@@ -350,11 +350,11 @@ export default function Home() {
                   <span className="text-[#efb62f] font-bold text-xl">3</span>
                 </div>
                 <CardTitle className="text-black">Final Delivery</CardTitle>
-                <CardDescription className="text-[#efb62f] text-xs mt-2">ZEC → SOL</CardDescription>
+                <CardDescription className="text-[#efb62f] text-xs mt-2">ZEC → {selectedToken}</CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 text-sm">
-                  ZEC is swapped back to SOL via NEAR Intents and delivered directly to the recipient's Solana address
+                  ZEC is swapped back to {selectedToken} via NEAR Intents and delivered directly to the recipient's Solana address
                 </p>
               </CardContent>
             </Card>
