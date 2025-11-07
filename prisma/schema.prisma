@@ -83,7 +83,8 @@ model Transaction {
   status            TransactionStatus   @default(PENDING_DEPOSIT)
   depositAddress    String              @unique
   recipientAddress  String
-  amount            Float               // SOL amount
+  amount            Float               // Token amount (SOL or USDC)
+  tokenType         String              @default("SOL") // Token type: SOL or USDC
   delayMinutes      Int                 @default(0) // Time delay before final withdrawal (disabled)
   platformFee       Float               @default(0.0025) // 0.25%
   relayerFee        Float               @default(0.002) // Fixed 0.002 SOL

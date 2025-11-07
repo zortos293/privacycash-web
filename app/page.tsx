@@ -4,13 +4,18 @@ import { useState } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import { getAssociatedTokenAddress, createTransferInstruction, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowRight, Shield, Zap, Eye, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+
+// USDC Token Mint Address on Solana Mainnet
+const USDC_MINT = new PublicKey('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
 
 export default function Home() {
   const { publicKey, connected, sendTransaction } = useWallet();
@@ -19,6 +24,7 @@ export default function Home() {
 
   const [recipientAddress, setRecipientAddress] = useState('');
   const [amount, setAmount] = useState('0.1');
+  const [selectedToken, setSelectedToken] = useState<'SOL' | 'USDC'>('SOL');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleStartSwap = async () => {
@@ -51,6 +57,7 @@ export default function Home() {
           senderAddress: publicKey.toString(),
           recipientAddress,
           amount: amountNum,
+          tokenType: selectedToken,
         }),
       });
 
@@ -60,19 +67,47 @@ export default function Home() {
         throw new Error(data.error || 'Failed to create swap');
       }
 
-      // Step 2: Send SOL to deposit address
+      // Step 2: Send tokens to deposit address
       toast.loading('Approve transaction in your wallet...', { id: 'swap-progress' });
 
       const depositPubkey = new PublicKey(data.depositAddress);
-      const lamports = Math.floor(amountNum * LAMPORTS_PER_SOL);
+      const transaction = new Transaction();
 
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: depositPubkey,
-          lamports,
-        })
-      );
+      if (selectedToken === 'SOL') {
+        // SOL transfer
+        const lamports = Math.floor(amountNum * LAMPORTS_PER_SOL);
+        transaction.add(
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: depositPubkey,
+            lamports,
+          })
+        );
+      } else {
+        // USDC transfer (SPL Token)
+        const senderTokenAccount = await getAssociatedTokenAddress(
+          USDC_MINT,
+          publicKey
+        );
+        const recipientTokenAccount = await getAssociatedTokenAddress(
+          USDC_MINT,
+          depositPubkey
+        );
+
+        // USDC has 6 decimals
+        const usdcAmount = Math.floor(amountNum * 1_000_000);
+
+        transaction.add(
+          createTransferInstruction(
+            senderTokenAccount,
+            recipientTokenAccount,
+            publicKey,
+            usdcAmount,
+            [],
+            TOKEN_PROGRAM_ID
+          )
+        );
+      }
 
       const signature = await sendTransaction(transaction, connection);
 
@@ -171,7 +206,7 @@ export default function Home() {
             <CardHeader>
               <CardTitle className="text-2xl text-[#efb62f]">Create Privacy Swap</CardTitle>
               <CardDescription className="text-gray-600">
-                Send SOL privately through our multi-chain mixer
+                Send SOL or USDC privately through our multi-chain mixer
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -182,9 +217,24 @@ export default function Home() {
                 </div>
               ) : (
                 <>
+                  {/* Token Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-black">Select Token</Label>
+                    <Select value={selectedToken} onValueChange={(value: 'SOL' | 'USDC') => setSelectedToken(value)}>
+                      <SelectTrigger className="bg-white border-gray-200 text-black focus:border-[#efb62f]">
+                        <SelectValue placeholder="Select token" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="SOL">SOL (Solana)</SelectItem>
+                        <SelectItem value="USDC">USDC (USD Coin)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500">Choose which token to send</p>
+                  </div>
+
                   {/* Amount Input */}
                   <div className="space-y-2">
-                    <Label className="text-black">Amount (SOL)</Label>
+                    <Label className="text-black">Amount ({selectedToken})</Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -192,9 +242,9 @@ export default function Home() {
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
                       className="bg-white border-gray-200 text-black focus:border-[#efb62f]"
-                      placeholder="0.1"
+                      placeholder={selectedToken === 'SOL' ? '0.1' : '10'}
                     />
-                    <p className="text-xs text-gray-500">Minimum: 0.01 SOL</p>
+                    <p className="text-xs text-gray-500">Minimum: {selectedToken === 'SOL' ? '0.01 SOL' : '1 USDC'}</p>
                   </div>
 
                   {/* Recipient Address */}

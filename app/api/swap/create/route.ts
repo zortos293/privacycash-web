@@ -6,12 +6,20 @@ import { encryptPrivateKey } from '@/lib/encryption';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { senderAddress, recipientAddress, amount } = body;
+    const { senderAddress, recipientAddress, amount, tokenType = 'SOL' } = body;
 
     // Validate inputs
     if (!senderAddress || !recipientAddress || !amount) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Validate token type
+    if (tokenType !== 'SOL' && tokenType !== 'USDC') {
+      return NextResponse.json(
+        { error: 'Invalid token type. Must be SOL or USDC' },
         { status: 400 }
       );
     }
@@ -46,6 +54,7 @@ export async function POST(request: NextRequest) {
         depositAddress,
         recipientAddress,
         amount: amountNum,
+        tokenType,
         delayMinutes: 2, // Fixed privacy delay (integer)
         relayerFee: 0.001,
         status: 'PENDING_DEPOSIT',
@@ -57,6 +66,7 @@ export async function POST(request: NextRequest) {
               details: JSON.stringify({
                 depositAddress,
                 expectedAmount: amountNum,
+                tokenType,
               }),
             },
           ],
@@ -79,6 +89,7 @@ export async function POST(request: NextRequest) {
       transactionId: transaction.id,
       depositAddress,
       amount: amountNum,
+      tokenType,
     });
   } catch (error) {
     console.error('Error creating swap:', error);
